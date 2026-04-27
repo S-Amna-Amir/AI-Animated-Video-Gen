@@ -1,5 +1,15 @@
+READMEEE.md
+data/outputs/phase1/
+data/outputs/phase2/
+
+
+
+
+
+
+
 # Environment variables
-.env*
+.env
 
 # Python bytecode
 __pycache__/

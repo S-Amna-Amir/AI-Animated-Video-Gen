@@ -1,0 +1,38 @@
+# Core LLM / workflow
+langchain>=0.1.0
+langgraph==0.2.55
+groq==0.11.0
+pydantic>=2.0.0
+python-dotenv>=1.0.0
+
+# Memory / state
+chromadb==0.4.24
+langgraph-checkpoint-sqlite  # Fix: This replaces the non-existent 'sqlitesaver'
+
+# Audio / TTS
+edge-tts==6.1.12
+pydub==0.25.1
+elevenlabs==0.1.0
+pygame
+
+# Video / image
+moviepy==1.0.3
+opencv-python==4.8.1.78
+pillow==10.1.0
+websockets
+
+# Backend
+fastapi
+uvicorn[standard]
+python-multipart
+
+# Utilities
+requests==2.31.0
+numpy
+tqdm
+
+# Dev / testing
+pytest
+black
+flake8
+mypy
