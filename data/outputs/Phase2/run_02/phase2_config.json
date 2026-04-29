@@ -1,0 +1,26 @@
+{
+  "phase1_data_dir": "data\\outputs\\Phase1",
+  "freesound_api_available": true,
+  "audio_engine": "moviepy",
+  "voice_mapper_config": {
+    "mappings": {
+      "JACK": "en-US-GuyNeural",
+      "JAMES": "en-US-DavidNeural",
+      "THOMAS": "en-GB-ThomasNeural",
+      "VLADIMIR": "en-GB-OliverNeural",
+      "OLIVER": "en-GB-OliverNeural",
+      "RYAN": "en-AU-WilliamNeural",
+      "LIAM": "en-CA-LiamNeural",
+      "NARRATOR": "en-US-ArthurNeural",
+      "HERO": "en-US-GuyNeural",
+      "RACHEL": "en-US-AriaNeural",
+      "JESSICA": "en-US-JennyNeural",
+      "SOPHIA": "en-GB-SoniaNeural",
+      "EMILY": "en-GB-MiaNeural",
+      "SARAH": "en-AU-NatashaNeural",
+      "EMMA": "en-CA-ClaraNeural",
+      "ALEXANDRA": "en-GB-SoniaNeural",
+      "NATASHA": "en-GB-MiaNeural"
+    }
+  }
+}
