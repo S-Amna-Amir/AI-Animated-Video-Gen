@@ -67,7 +67,7 @@ Do not include quotes, do not explain, just the 3 words separated by spaces.
             logger.info(f"Generating BGM query for scene at {location}")
             
             response = self.groq_client.chat.completions.create(
-                model="mixtral-8x7b-32768",  # or appropriate Groq model
+                model="llama-3.1-8b-instant",
                 messages=[
                     {
                         "role": "user",

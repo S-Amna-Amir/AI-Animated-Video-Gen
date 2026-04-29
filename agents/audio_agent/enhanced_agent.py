@@ -13,9 +13,9 @@ from datetime import datetime
 import logging
 import os
 
-import requests
-
 from mcp.tools.audio_tools.voice_mapper import VoiceMapper
+from mcp.tools.audio_tools.bgm_tool import search_and_download_bgm, BGMLocator
+from mcp.tools.audio_tools.scene_mood_analyzer import SceneMoodAnalyzer
 from mcp.tools.audio_tools.tts_tool import TTSTool
 from agents.audio_agent.run_manager import AudioRunManager
 from agents.audio_agent.planner import AudioPhasePlanner, DialogueExtractor
@@ -28,7 +28,7 @@ def _load_moviepy_modules():
     """Load MoviePy lazily so the module stays importable until the venv is recreated."""
     audio_file_clip = importlib.import_module("moviepy.audio.io.AudioFileClip")
     audio_clip = importlib.import_module("moviepy.audio.AudioClip")
-    afx = importlib.import_module("moviepy.audio.fx.all")
+    afx = importlib.import_module("moviepy.audio.fx")
     editor = type(
         "MoviePyCompat",
         (),
@@ -81,6 +81,21 @@ class EnhancedAudioAgent:
         self.run_manager = AudioRunManager(phase2_output_dir)
         self.planner = AudioPhasePlanner()
         self.freesound_api_key = freesound_api_key or os.getenv("FREESOUND_API_KEY")
+        self.groq_api_key = os.getenv("GROQ_API_KEY")
+
+        groq_client = None
+        if self.groq_api_key:
+            try:
+                from groq import Groq
+
+                groq_client = Groq(api_key=self.groq_api_key)
+                logger.info("   Groq mood analyzer: enabled")
+            except Exception as e:
+                logger.warning(f"   Groq mood analyzer unavailable: {str(e)}")
+        else:
+            logger.info("   Groq mood analyzer: disabled (no API key)")
+
+        self.mood_analyzer = SceneMoodAnalyzer(groq_client=groq_client)
         
         # Create run directory
         self.run_manager.create_run_directory(run_id)
@@ -190,7 +205,7 @@ class EnhancedAudioAgent:
                     return None
 
                 scene_audio = editor.concatenate_audioclips(scene_clips)
-                scene_audio.write_audiofile(str(scene_audio_file), verbose=False, logger=None)
+                scene_audio.write_audiofile(str(scene_audio_file), logger=None)
 
                 logger.info(f"✓ Scene {scene_id} voice audio: {scene_audio.duration * 1000:.0f}ms")
                 return scene_audio_file
@@ -206,96 +221,74 @@ class EnhancedAudioAgent:
             return None
     
     def _extract_mood_keyword(self, scene: Dict) -> str:
-        """Extract mood keyword from scene for Freesound search."""
-        location = scene.get("location", "").lower()
-        description = scene.get("description", "").lower()
-        
-        text = f"{location} {description}".lower()
-        
-        mood_keywords = {
-            "dark": "dark ambient",
-            "suspense": "suspenseful tension",
-            "danger": "cinematic danger",
-            "nature": "ambient nature",
-            "city": "urban ambient",
-            "quiet": "peaceful ambient",
-            "action": "intense action",
-            "calm": "calm peaceful",
-            "office": "corporate ambient",
-            "spy": "dark cinematic",
-        }
-        
-        for keyword, mood in mood_keywords.items():
-            if keyword in text:
-                return mood
-        
-        return "ambient"
+        """Generate scene-specific mood query using Groq analyzer with keyword fallback."""
+        location = scene.get("location", "Unknown")
+        description = scene.get("description", "")
+
+        dialogue_lines = scene.get("dialogue", [])
+        dialogue_text = " ".join(d.get("line", "") for d in dialogue_lines if isinstance(d, dict))
+        scene_text = f"{description} {dialogue_text}".strip()
+
+        # Estimate duration from dialogue count if explicit duration is unavailable.
+        duration_seconds = max(20, len(dialogue_lines) * 4)
+
+        query = self.mood_analyzer.generate_bgm_query(
+            scene_description=scene_text,
+            location=location,
+            duration=duration_seconds,
+        )
+
+        return (query or "ambient").strip() or "ambient"
     
     def _fetch_bgm_from_freesound(self, mood_query: str, scene_id: int) -> Optional[Path]:
         """
         Fetch BGM from Freesound API using mood query.
         Falls back to local default_bgm.mp3 if API fails.
         """
-        
-        fallback_bgm = Path("data/bgm_library/default_bgm.mp3")
-        
-        if not self.freesound_api_key:
-            logger.warning(f"Scene {scene_id}: No Freesound API key - using fallback")
-            return fallback_bgm if fallback_bgm.exists() else None
-        
         try:
-            url = "https://freesound.org/apiv2/search/text/"
-            headers = {"Authorization": f"Token {self.freesound_api_key}"}
-            params = {
-                "query": mood_query,
-                "filter": "duration:[10 TO 120] tags:loop OR tags:ambient",
-                "sort": "rating",
-                "fields": "id,name,previews,duration",
-                "page_size": 1
-            }
-            
+            bgm_file = self.run_manager.get_audio_scene_dir(scene_id) / "bgm.mp3"
+            fallback_bgm = BGMLocator.get_fallback_bgm()
+
+            if not self.freesound_api_key:
+                logger.warning(f"Scene {scene_id}: No Freesound API key - using fallback")
+                return fallback_bgm
+
             logger.info(f"Scene {scene_id}: Searching Freesound for '{mood_query}'...")
-            response = requests.get(url, headers=headers, params=params, timeout=10)
-            response.raise_for_status()
-            
-            results = response.json()
-            if not results.get("results"):
-                logger.warning(f"Scene {scene_id}: No results - using fallback")
-                return fallback_bgm if fallback_bgm.exists() else None
-            
-            track = results["results"][0]
-            track_id = track["id"]
-            track_name = track["name"]
-            preview_url = track["previews"].get("preview-hq-mp3")
-            
-            if not preview_url:
-                logger.warning(f"Scene {scene_id}: No preview - using fallback")
-                return fallback_bgm if fallback_bgm.exists() else None
-            
-            bgm_file = self.run_manager.get_audio_scene_dir(scene_id) / f"bgm.mp3"
-            logger.info(f"Scene {scene_id}: Downloading '{track_name}'...")
-            
-            bgm_response = requests.get(preview_url, timeout=15)
-            bgm_response.raise_for_status()
-            
-            with open(bgm_file, "wb") as f:
-                f.write(bgm_response.content)
-            
-            logger.info(f"✓ Downloaded '{track_name}' ({len(bgm_response.content)} bytes)")
-            
-            self.bgm_metadata[scene_id] = {
-                "query": mood_query,
-                "source": "freesound",
-                "name": track_name,
-                "freesound_id": track_id,
-                "url": f"https://freesound.org/sounds/{track_id}/"
-            }
-            
-            return bgm_file
+            downloaded_path, metadata = search_and_download_bgm(
+                mood_query=mood_query,
+                output_path=bgm_file,
+                api_key=self.freesound_api_key,
+                use_fallback=True,
+            )
+
+            if not (downloaded_path and downloaded_path.exists()):
+                logger.info(
+                    f"Scene {scene_id}: No result for '{mood_query}', retrying with broad query"
+                )
+                downloaded_path, metadata = search_and_download_bgm(
+                    mood_query="cinematic ambient music",
+                    output_path=bgm_file,
+                    api_key=self.freesound_api_key,
+                    use_fallback=True,
+                )
+
+            if downloaded_path and downloaded_path.exists():
+                self.bgm_metadata[scene_id] = {
+                    "query": mood_query,
+                    "source": metadata.get("source", "freesound") if metadata else "freesound",
+                    "name": metadata.get("name") if metadata else None,
+                    "freesound_id": metadata.get("freesound_id") if metadata else None,
+                    "url": metadata.get("url") if metadata else None,
+                }
+                logger.info(f"✓ BGM ready for scene {scene_id}: {downloaded_path.name}")
+                return downloaded_path
+
+            logger.warning(f"Scene {scene_id}: No BGM result - using fallback")
+            return fallback_bgm
             
         except Exception as e:
             logger.warning(f"Scene {scene_id}: Freesound error ({str(e)}) - using fallback")
-            return fallback_bgm if fallback_bgm.exists() else None
+            return BGMLocator.get_fallback_bgm()
     
     def _layer_voice_with_bgm(self, voice_file: Path, bgm_file: Path, scene_id: int) -> Optional[Path]:
         """
@@ -317,10 +310,10 @@ class EnhancedAudioAgent:
             bgm_clip = editor.AudioFileClip(str(bgm_file))
 
             try:
-                bgm_looped = afx.audio_loop(bgm_clip, duration=voice_clip.duration)
-                bgm_quiet = bgm_looped.volumex(0.2)
+                bgm_looped = bgm_clip.with_effects([afx.AudioLoop(duration=voice_clip.duration)])
+                bgm_quiet = bgm_looped.with_effects([afx.MultiplyVolume(0.2)])
                 combined_audio = editor.CompositeAudioClip([bgm_quiet, voice_clip])
-                combined_audio.write_audiofile(str(output_file), verbose=False, logger=None)
+                combined_audio.write_audiofile(str(output_file), logger=None)
 
                 logger.info("✓ Composed audio saved")
                 return output_file
@@ -369,7 +362,7 @@ class EnhancedAudioAgent:
             
             master_file = self.run_manager.get_master_audio_path()
             master_audio = editor.concatenate_audioclips(scene_clips)
-            master_audio.write_audiofile(str(master_file), verbose=False, logger=None)
+            master_audio.write_audiofile(str(master_file), logger=None)
 
             logger.info(f"✅ Master track: {master_audio.duration * 1000:.0f}ms total")
             return master_file

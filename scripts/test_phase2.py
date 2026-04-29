@@ -19,7 +19,7 @@ def _load_moviepy_modules():
     """Load MoviePy v2 modules lazily for compatibility checks."""
     audio_file_clip = importlib.import_module("moviepy.audio.io.AudioFileClip")
     audio_clip = importlib.import_module("moviepy.audio.AudioClip")
-    afx = importlib.import_module("moviepy.audio.fx.all")
+    afx = importlib.import_module("moviepy.audio.fx")
     return audio_file_clip, audio_clip, afx
 
 # Add parent directory to path for imports and change working directory

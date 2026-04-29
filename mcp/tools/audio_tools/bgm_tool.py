@@ -26,13 +26,10 @@ class FreesoundAPI:
             api_key: Freesound API key. If not provided, tries to load from environment.
         """
         self.api_key = api_key or os.getenv("FREESOUND_API_KEY")
-        self.base_url = "https://freesound.org/api/v2"
+        self.base_url = "https://freesound.org/apiv2"
         self.session = requests.Session()
-        
+
         if self.api_key:
-            self.session.headers.update({
-                "Authorization": f"Token {self.api_key}"
-            })
             logger.info("Freesound API initialized with API key")
         else:
             logger.warning("Freesound API key not provided - will use fallback audio")
@@ -61,19 +58,17 @@ class FreesoundAPI:
             return None
         
         try:
-            # Build search parameters
+            # Keep search broad to avoid empty result sets.
+            effective_query = (query or "").strip() or "cinematic ambient music"
             params = {
-                "query": query,
+                "query": effective_query,
                 "sort": "rating_desc",
-                "filter": f"duration:[{duration_min} TO {duration_max}]",
-                "page_size": 5
+                "page_size": 5,
+                "token": self.api_key,
+                "fields": "id,name,url,duration,tags,rating,previews",
             }
-            
-            if tags:
-                tag_filter = " OR ".join(f'tag:"{tag}"' for tag in tags)
-                params["filter"] += f" {tag_filter}"
-            
-            logger.info(f"Searching Freesound for: {query}")
+
+            logger.info(f"Searching Freesound for: {effective_query}")
             
             response = self.session.get(
                 f"{self.base_url}/search/text/",
@@ -89,18 +84,24 @@ class FreesoundAPI:
             results = data.get("results", [])
             
             if not results:
-                logger.warning(f"No results found for query: {query}")
+                logger.warning(f"No results found for query: {effective_query}")
                 return None
             
             # Get first result with best rating
             best_result = results[0]
+            previews = best_result.get("previews", {})
+            preview_url = previews.get("preview-hq-mp3")
+
+            if not preview_url:
+                logger.warning("Top Freesound result has no preview-hq-mp3 URL")
+                return None
             
             return {
                 "id": best_result.get("id"),
                 "name": best_result.get("name"),
                 "duration": best_result.get("duration"),
                 "url": best_result.get("url"),
-                "preview_url": best_result.get("previews", {}).get("preview-hq-mp3"),
+                "preview_url": preview_url,
                 "download_url": f"{self.base_url}/sounds/{best_result.get('id')}/download/",
                 "tags": best_result.get("tags", []),
                 "rating": best_result.get("rating")
@@ -126,7 +127,8 @@ class FreesoundAPI:
             True if successful, False otherwise
         """
         try:
-            response = self.session.get(preview_url, timeout=30, stream=True)
+            params = {"token": self.api_key} if self.api_key else None
+            response = self.session.get(preview_url, timeout=30, stream=True, params=params)
             
             if response.status_code != 200:
                 logger.error(f"Download failed: {response.status_code}")
@@ -220,6 +222,8 @@ def search_and_download_bgm(
         )
         
         if result and result.get("preview_url"):
+            print(f"Selected BGM: {result.get('name')}")
+            print(f"Preview URL: {result.get('preview_url')}")
             if fs_api.download_audio(result["preview_url"], output_path):
                 return output_path, result
     
