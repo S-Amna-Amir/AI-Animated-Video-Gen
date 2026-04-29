@@ -1,13 +1,26 @@
 """
 Phase 2 Audio Generation Test Script.
-Tests the audio agent with dummy Phase 1 data from data/outputs/Phase1.
+Tests the enhanced audio agent with full BGM integration using dummy Phase 1 data from data/outputs/Phase1.
 """
 
 import asyncio
 import json
 import sys
 import os
+import importlib
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables from .env
+load_dotenv()
+
+
+def _load_moviepy_modules():
+    """Load MoviePy v2 modules lazily for compatibility checks."""
+    audio_file_clip = importlib.import_module("moviepy.audio.io.AudioFileClip")
+    audio_clip = importlib.import_module("moviepy.audio.AudioClip")
+    afx = importlib.import_module("moviepy.audio.fx.all")
+    return audio_file_clip, audio_clip, afx
 
 # Add parent directory to path for imports and change working directory
 script_dir = Path(__file__).parent
@@ -15,24 +28,35 @@ project_root = script_dir.parent
 sys.path.insert(0, str(project_root))
 os.chdir(project_root)
 
-from agents.audio_agent.agent import AudioAgent, run_audio_agent
+from agents.audio_agent.enhanced_agent import EnhancedAudioAgent
 
 
 async def test_phase2_with_dummy_data():
     """
-    Test Phase 2 audio generation with dummy Phase 1 data.
+    Test Phase 2 audio generation with full BGM integration using dummy Phase 1 data.
     """
     
     print("\n" + "="*80)
-    print("PHASE 2 - AUDIO GENERATION TEST")
+    print("PHASE 2 - AUDIO GENERATION TEST (MoviePy with BGM Integration)")
     print("="*80 + "\n")
     
     # Configuration
     phase1_data_dir = "data/outputs/Phase1"
     phase2_output_dir = "data/outputs/Phase2"
     
+    # Get API keys from environment
+    freesound_api_key = os.getenv("FREESOUND_API_KEY")
+    
     print(f"📁 Phase 1 Data Dir: {phase1_data_dir}")
     print(f"📁 Phase 2 Output Dir: {phase2_output_dir}\n")
+    
+    # Check API availability
+    if freesound_api_key:
+        print(f"✅ Freesound API key found - BGM search enabled\n")
+    else:
+        print(f"⚠️  Freesound API key not found - Will use fallback BGM\n")
+    
+    print(f"🎵 Audio Engine: MoviePy (AudioFileClip + afx.audio_loop + CompositeAudioClip)\n")
     
     # Verify Phase 1 data exists
     phase1_path = Path(phase1_data_dir)
@@ -103,21 +127,26 @@ async def test_phase2_with_dummy_data():
     if len(characters) > 5:
         print(f"  ... and {len(characters) - 5} more\n")
     
-    # Run Phase 2
+    # Run Phase 2 with the MoviePy-based Enhanced Agent
     print("\n" + "-"*80)
-    print("🎬 Starting Phase 2 Audio Generation...")
+    print("🎬 Starting Phase 2 Audio Generation with BGM Integration...")
     print("-"*80 + "\n")
     
     try:
-        results = await run_audio_agent(
-            phase1_dir=phase1_data_dir,
-            phase2_dir=phase2_output_dir,
-            run_id=None  # Auto-generate run ID
+        # Create enhanced agent with API keys
+        agent = EnhancedAudioAgent(
+            phase1_data_dir=phase1_data_dir,
+            phase2_output_dir=phase2_output_dir,
+            freesound_api_key=freesound_api_key,
+            run_id=None  # Auto-generate run ID (sequential)
         )
+        
+        # Run the full pipeline
+        results = await agent.process()
         
         # Display results
         print("\n" + "="*80)
-        print("📊 PHASE 2 RESULTS")
+        print("📊 PHASE 2 RESULTS (Enhanced with BGM)")
         print("="*80 + "\n")
         
         if results.get("status") == "success":
@@ -125,13 +154,14 @@ async def test_phase2_with_dummy_data():
             
             print(f"Run ID: {results.get('run_id')}")
             print(f"Total Scenes: {results.get('total_scenes')}")
-            print(f"Total Dialogues: {results.get('total_dialogues')}")
-            print(f"Audio Files Generated: {results.get('audio_files_generated')}")
+            print(f"Scenes Processed: {results.get('scenes_processed')}")
+            print(f"Scenes with BGM: {results.get('scenes_with_bgm', 0)}")
             print(f"Total Duration: {results.get('total_duration_ms')}ms "
                   f"({results.get('total_duration_ms') / 1000:.1f}s)\n")
             
-            print(f"Output Directory: {results.get('output_directory')}")
-            print(f"Timing Manifest: {results.get('timing_manifest_path')}\n")
+            print(f"📁 Output Directory: {results.get('output_directory')}")
+            print(f"📄 Timing Manifest: {results.get('timing_manifest_path')}")
+            print(f"🎵 Master Audio Track: {results.get('master_audio_track')}\n")
             
             # Display character-to-voice mappings
             voices = results.get('character_voices_used', {})
@@ -139,15 +169,21 @@ async def test_phase2_with_dummy_data():
             for char_name, voice in sorted(voices.items()):
                 print(f"  • {char_name:15} → {voice}")
             
-            # Display workflow progress
-            progress = results.get('workflow_progress', {})
-            print(f"\n📈 Workflow Progress:")
-            print(f"  Completed Steps: {progress.get('completed_steps')}/{progress.get('total_steps')}")
-            for step in progress.get('completed', []):
-                print(f"    ✓ {step}")
+            # Display BGM information
+            bgm_info = results.get('bgm_metadata', {})
+            if bgm_info.get('scenes'):
+                print(f"\n🎵 Background Music per Scene ({bgm_info.get('total', 0)} scenes):")
+                for scene_id, bgm in sorted(bgm_info.get('scenes', {}).items()):
+                    print(f"  Scene {scene_id}:")
+                    print(f"    • Query: {bgm.get('query', 'N/A')}")
+                    print(f"    • Source: {bgm.get('source', 'N/A')}")
+                    if bgm.get('name'):
+                        print(f"    • Name: {bgm.get('name')}")
+                    if bgm.get('freesound_id'):
+                        print(f"    • Freesound ID: {bgm.get('freesound_id')}")
             
             print("\n" + "="*80)
-            print("✨ Phase 2 Audio Generation Complete!")
+            print("✨ Phase 2 Audio Generation with BGM Complete!")
             print("="*80 + "\n")
             
             return results
@@ -155,12 +191,6 @@ async def test_phase2_with_dummy_data():
         else:
             print("❌ Phase 2 Processing: FAILED\n")
             print(f"Error: {results.get('error')}\n")
-            
-            progress = results.get('workflow_progress', {})
-            print(f"Workflow Progress:")
-            print(f"  Completed Steps: {progress.get('completed_steps')}/{progress.get('total_steps')}")
-            print(f"  Failed Steps: {progress.get('failed_steps')}\n")
-            
             return None
     
     except Exception as e:

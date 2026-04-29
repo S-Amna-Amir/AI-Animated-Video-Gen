@@ -33,6 +33,24 @@ class EdgeTTSVoice(Enum):
 class VoiceMapper:
     """Maps character names/personalities to Edge-TTS voices."""
     
+    # Available voices in preference order (highest to lowest)
+    # Reverse this for Jack to get least priority
+    MALE_VOICES_PREFERRED = [
+        EdgeTTSVoice.RYAN_AU.value,          # Most preferred
+        EdgeTTSVoice.OLIVER_GB.value,
+        EdgeTTSVoice.THOMAS_GB.value,
+        EdgeTTSVoice.JAMES_US.value,
+        EdgeTTSVoice.JACK_US.value,          # Least preferred (Jack gets lowest priority)
+    ]
+    
+    FEMALE_VOICES_PREFERRED = [
+        EdgeTTSVoice.SARAH_AU.value,         # Most preferred
+        EdgeTTSVoice.EMILY_GB.value,
+        EdgeTTSVoice.SOPHIA_GB.value,
+        EdgeTTSVoice.JESSICA_US.value,
+        EdgeTTSVoice.RACHEL_US.value,        # Least preferred
+    ]
+    
     # Default mappings - can be overridden
     DEFAULT_CHARACTER_VOICES: Dict[str, str] = {
         # Common male names/roles
@@ -57,17 +75,20 @@ class VoiceMapper:
         "NATASHA": EdgeTTSVoice.EMILY_GB.value,
     }
     
-    def __init__(self, custom_mappings: Optional[Dict[str, str]] = None):
+    def __init__(self, custom_mappings: Optional[Dict[str, str]] = None, reverse_preference: bool = True):
         """
         Initialize the voice mapper.
         
         Args:
             custom_mappings: Optional custom character-to-voice mappings to override defaults
+            reverse_preference: If True (default), Jack gets least priority voice; if False, normal preference order
         """
         self.character_voices = self.DEFAULT_CHARACTER_VOICES.copy()
         if custom_mappings:
             self.character_voices.update(custom_mappings)
         self.voice_assignment_history: Dict[str, str] = {}
+        self.reverse_preference = reverse_preference
+        self.assignment_counter = 0  # Track how many characters we've assigned voices to
     
     def get_voice_for_character(self, character_name: str) -> str:
         """
@@ -93,12 +114,14 @@ class VoiceMapper:
         voice = self._assign_voice_by_name(normalized_name)
         self.character_voices[normalized_name] = voice
         self.voice_assignment_history[normalized_name] = voice
+        self.assignment_counter += 1  # Track assignments for rotation
         return voice
     
     def _assign_voice_by_name(self, character_name: str) -> str:
         """
         Assign a voice based on character name analysis.
         Uses simple gender inference from name to select appropriate voice.
+        With reverse_preference=True, Jack gets the least preferred voice.
         
         Args:
             character_name: Name of the character
@@ -111,24 +134,16 @@ class VoiceMapper:
         
         if character_name.endswith(female_endings):
             # Use female voice - rotate through available options
-            available_female = [
-                EdgeTTSVoice.RACHEL_US.value,
-                EdgeTTSVoice.JESSICA_US.value,
-                EdgeTTSVoice.SOPHIA_GB.value,
-                EdgeTTSVoice.EMILY_GB.value,
-                EdgeTTSVoice.SARAH_AU.value,
-            ]
-            return available_female[len(self.voice_assignment_history) % len(available_female)]
+            # With reverse_preference=True, use voices in reverse order (highest to lowest priority)
+            available_female = self.FEMALE_VOICES_PREFERRED if self.reverse_preference else list(reversed(self.FEMALE_VOICES_PREFERRED))
+            voice_index = self.assignment_counter % len(available_female)
+            return available_female[voice_index]
         else:
             # Use male voice - rotate through available options
-            available_male = [
-                EdgeTTSVoice.JACK_US.value,
-                EdgeTTSVoice.JAMES_US.value,
-                EdgeTTSVoice.THOMAS_GB.value,
-                EdgeTTSVoice.OLIVER_GB.value,
-                EdgeTTSVoice.RYAN_AU.value,
-            ]
-            return available_male[len(self.voice_assignment_history) % len(available_male)]
+            # With reverse_preference=True, use voices in reverse order (highest to lowest priority)
+            available_male = self.MALE_VOICES_PREFERRED if self.reverse_preference else list(reversed(self.MALE_VOICES_PREFERRED))
+            voice_index = self.assignment_counter % len(available_male)
+            return available_male[voice_index]
     
     def get_all_character_voices(self) -> Dict[str, str]:
         """Get all character-to-voice mappings."""
