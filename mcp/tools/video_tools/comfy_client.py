@@ -14,20 +14,34 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 HF_API_TOKEN = os.getenv("HF_API_TOKEN")
-if not HF_API_TOKEN:
-    raise EnvironmentError("HF_API_TOKEN not found in environment. Please add it to your .env file.")
 
 PRIMARY_MODEL = "black-forest-labs/FLUX.1-schnell"
 FALLBACK_MODEL = "runwayml/stable-diffusion-v1-5"
 BASE_API_URL = "https://router.huggingface.co/hf-inference/models/"
+import hashlib
 
+CHARACTER_SEEDS = {
+    "JACK": 42,
+    "RACHEL": 137,
+    "VLADIMIR": 256
+}
 
-def generate_image(positive_prompt: str, negative_prompt: str, scene_id: str) -> bytes:
+def generate_image(positive_prompt: str, negative_prompt: str, scene_id: str, character_name: str = "") -> bytes:
     """
     Generate an image using the Hugging Face Inference API.
     Handles rate limits (429) and model loading (503).
     """
+    if not HF_API_TOKEN:
+        raise EnvironmentError("HF_API_TOKEN not found in environment. Please add it to your .env file.")
+        
     headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
+    if character_name in CHARACTER_SEEDS:
+        seed = CHARACTER_SEEDS[character_name]
+    elif character_name:
+        seed = int(hashlib.md5(character_name.encode('utf-8')).hexdigest(), 16) % (2**32 - 1)
+    else:
+        seed = 42
+
     payload = {
         "inputs": positive_prompt,
         "parameters": {
@@ -35,7 +49,8 @@ def generate_image(positive_prompt: str, negative_prompt: str, scene_id: str) ->
             "num_inference_steps": 20,
             "guidance_scale": 7.5,
             "width": 512,
-            "height": 512
+            "height": 512,
+            "seed": seed
         }
     }
 
