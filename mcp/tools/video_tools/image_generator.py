@@ -52,27 +52,36 @@ def generate_images_for_dialogue(
         
         line_count = scene_line_counts.get(scene_id, 1)
         scene_duration_ms = entry.get("scene_duration_ms", 5000 * line_count)
-        duration_ms = scene_duration_ms / max(1, line_count)
+        duration_ms = entry.get("duration_ms")
+        if not duration_ms:
+            duration_ms = scene_duration_ms / max(1, line_count)
         
-        try:
-            image_bytes = comfy_client.generate_image(
-                positive_prompt=prompt_used["positive"],
-                negative_prompt=prompt_used["negative"],
-                scene_id=scene_id,
-            )
-
-            output_path = Path(run_dir) / "images" / f"scene_{scene_id}_line_{index}.png"
-            saved_path = comfy_client.save_image(image_bytes, str(output_path))
-            
+        output_path = Path(run_dir) / "images" / f"scene_{scene_id}_line_{index}.png"
+        
+        if output_path.exists():
+            logger.info("Image already exists at %s, skipping generation", output_path)
+            saved_path = str(output_path)
             status = "success"
             error_msg = ""
-            logger.info("✓ Scene %s line %d done — saved to %s", scene_id, index, saved_path)
-        except Exception as exc:
-            logger.exception("Dialogue image generation failed for scene_id=%s line=%d", scene_id, index)
-            saved_path = ""
-            status = "failed"
-            error_msg = str(exc)
-            logger.error("✗ Scene %s line %d failed — %s", scene_id, index, error_msg)
+        else:
+            try:
+                image_bytes = comfy_client.generate_image(
+                    positive_prompt=prompt_used["positive"],
+                    negative_prompt=prompt_used["negative"],
+                    scene_id=scene_id,
+                    character_name=speaker,
+                )
+
+                saved_path = comfy_client.save_image(image_bytes, str(output_path))
+                status = "success"
+                error_msg = ""
+                logger.info("✓ Scene %s line %d done — saved to %s", scene_id, index, saved_path)
+            except Exception as exc:
+                logger.exception("Dialogue image generation failed for scene_id=%s line=%d", scene_id, index)
+                saved_path = ""
+                status = "failed"
+                error_msg = str(exc)
+                logger.error("✗ Scene %s line %d failed — %s", scene_id, index, error_msg)
 
         results.append({
             "scene_id": scene_id,

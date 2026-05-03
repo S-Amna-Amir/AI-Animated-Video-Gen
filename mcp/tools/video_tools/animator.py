@@ -30,27 +30,27 @@ def get_ffmpeg_zoompan_filter(effect: str, duration_seconds: float) -> str:
     
     if effect == "zoom_in":
         # smooth slow zoom from 1.0x to 1.3x over full duration
-        return f"zoompan=z='min(zoom+0.0015,1.3)':d={frames}:s=512x512"
+        return f"zoompan=z='min(zoom+0.0015,1.3)':d={frames}:s=512x512:fps=24"
     if effect == "zoom_out":
         # starts at 1.3x zoom, slowly pulls back to 1.0x
-        return f"zoompan=z='if(eq(on,1),1.3,zoom-0.0015)':d={frames}:s=512x512"
+        return f"zoompan=z='if(eq(on,1),1.3,zoom-0.0015)':d={frames}:s=512x512:fps=24"
     if effect == "pan_left_zoom":
         # zoom 1.2x + pan from right to left
-        return f"zoompan=z=1.2:x='(iw-iw/zoom)*(1-on/{frames})':d={frames}:s=512x512"
+        return f"zoompan=z=1.2:x='(iw-iw/zoom)*(1-on/{frames})':d={frames}:s=512x512:fps=24"
     if effect == "pan_right_zoom":
         # zoom 1.2x + pan from left to right
-        return f"zoompan=z=1.2:x='(iw-iw/zoom)*(on/{frames})':d={frames}:s=512x512"
+        return f"zoompan=z=1.2:x='(iw-iw/zoom)*(on/{frames})':d={frames}:s=512x512:fps=24"
     if effect == "pan_up":
         # zoom 1.2x + slow upward pan
-        return f"zoompan=z=1.2:y='(ih-ih/zoom)*(1-on/{frames})':d={frames}:s=512x512"
+        return f"zoompan=z=1.2:y='(ih-ih/zoom)*(1-on/{frames})':d={frames}:s=512x512:fps=24"
     if effect == "pan_down":
         # zoom 1.2x + slow downward pan
-        return f"zoompan=z=1.2:y='(ih-ih/zoom)*(on/{frames})':d={frames}:s=512x512"
+        return f"zoompan=z=1.2:y='(ih-ih/zoom)*(on/{frames})':d={frames}:s=512x512:fps=24"
     if effect == "dramatic_push":
         # fast zoom from 1.0x to 1.5x (for tense moments)
-        return f"zoompan=z='min(zoom+0.01,1.5)':d={frames}:s=512x512"
+        return f"zoompan=z='min(zoom+0.01,1.5)':d={frames}:s=512x512:fps=24"
         
-    return f"zoompan=z='zoom+0.0015':d={frames}:s=512x512"
+    return f"zoompan=z='zoom+0.0015':d={frames}:s=512x512:fps=24"
 
 
 def get_color_grade_filter(tone: str) -> str:
@@ -101,12 +101,12 @@ def animate_scene(
     zoompan_filter = get_ffmpeg_zoompan_filter(effect, duration_seconds)
     color_filter = get_color_grade_filter(tone)
     
-    # Combine filters: zoompan, color (if any), vignette, fade-in
+    # Combine filters: zoompan, color (if any), vignette, fade-in, fade-out
     filter_chain = [zoompan_filter]
     if color_filter:
         filter_chain.append(color_filter)
     filter_chain.append("vignette=PI/4")
-    filter_chain.append("fade=t=in:st=0:d=0.3")
+    filter_chain.append(f"fade=t=in:st=0:d=0.2,fade=t=out:st={duration_seconds - 0.2}:d=0.2")
     
     vf_string = ",".join(filter_chain)
 
@@ -117,9 +117,12 @@ def animate_scene(
     command = [
         ffmpeg_exe,
         "-loop", "1",
+        "-r", str(FPS),
         "-i", image_path,
         "-vf", vf_string,
         "-c:v", "libx264",
+        "-preset", "slow",
+        "-crf", "18",
         "-t", str(duration_seconds),
         "-pix_fmt", "yuv420p",
         "-r", str(FPS),

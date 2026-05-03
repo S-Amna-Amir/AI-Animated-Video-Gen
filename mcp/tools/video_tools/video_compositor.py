@@ -43,14 +43,14 @@ def add_subtitle_overlay(clip: VideoFileClip, text: str, duration: float) -> Com
         txt_clip = TextClip(
             font="Arial", 
             text=text, 
-            font_size=24, 
+            font_size=28, 
             color="white", 
             stroke_color="black", 
-            stroke_width=1.5,
+            stroke_width=2,
             method="caption",
             size=(clip.w - 40, None)
         )
-        txt_clip = txt_clip.with_position(("center", "bottom")).with_duration(duration)
+        txt_clip = txt_clip.with_position(("center", clip.h - 60)).with_duration(duration)
         return CompositeVideoClip([clip, txt_clip])
     except Exception as exc:
         logger.warning("Failed to add subtitle overlay: %s", exc)
@@ -74,7 +74,7 @@ def compose_final_video(
     dialogue_results: list[dict[str, Any]],
     output_path: str,
     use_transitions: bool = True,
-    use_subtitles: bool = False,
+    use_subtitles: bool = True,
 ) -> str:
     """
     Compose final video from per-dialogue clips.
@@ -98,10 +98,10 @@ def compose_final_video(
             scene_duration_ms = float(scene_lines[0].get("duration_ms", 5000)) * len(scene_lines)
             
             if audio_file and Path(audio_file).exists():
-                audio_clip = AudioFileClip(audio_file)
+                audio_clip = AudioFileClip(audio_file).with_duration(scene_duration_ms / 1000.0)
                 scene_duration_ms = audio_clip.duration * 1000.0
                 
-            per_line_duration = (scene_duration_ms / len(scene_lines)) / 1000.0
+            per_line_duration_seconds = (scene_duration_ms / len(scene_lines)) / 1000.0
             
             for result in scene_lines:
                 line_index = result["line_index"]
@@ -112,11 +112,15 @@ def compose_final_video(
                     logger.warning("Skipping clip %s because path is missing", clip_key)
                     continue
 
-                clip = VideoFileClip(clip_path).with_duration(per_line_duration)
+                line_duration_ms = result.get("duration_ms")
+                if line_duration_ms:
+                    line_duration_seconds = float(line_duration_ms) / 1000.0
+                else:
+                    line_duration_seconds = per_line_duration_seconds
+
+                clip = VideoFileClip(clip_path).with_duration(line_duration_seconds)
                 
-                if use_subtitles:
-                    text = result.get("text", "")
-                    clip = add_subtitle_overlay(clip, text, per_line_duration)
+                # Removed old MoviePy subtitle overlay
                     
                 scene_video_clips.append(clip)
             
@@ -130,13 +134,13 @@ def compose_final_video(
                 scene_clip = scene_clip.with_audio(audio_clip)
                 # Ensure the scene clip duration exactly matches the audio duration
                 scene_clip = scene_clip.with_duration(audio_clip.duration)
-                logger.info("Scene %s: %d images x %.2fs = %.2fs audio", scene_id, len(scene_lines), per_line_duration, audio_clip.duration)
+                logger.info("Scene %s: %d images x %.2fs = %.2fs audio", scene_id, len(scene_lines), per_line_duration_seconds, audio_clip.duration)
             else:
                 logger.warning("Audio missing for scene_id=%s, exporting scene as silent", scene_id)
-                logger.info("Scene %s: %d images x %.2fs = %.2fs", scene_id, len(scene_lines), per_line_duration, scene_clip.duration)
+                logger.info("Scene %s: %d images x %.2fs = %.2fs", scene_id, len(scene_lines), per_line_duration_seconds, scene_clip.duration)
                 
             if use_transitions and final_clips:
-                scene_clip = scene_clip.with_effects([vfx.CrossFadeIn(0.5)])
+                scene_clip = scene_clip.with_effects([vfx.CrossFadeIn(0.4)])
                 
             final_clips.append(scene_clip)
 
@@ -157,10 +161,48 @@ def compose_final_video(
             fps=24, 
             codec="libx264",
             audio_codec="aac",
+            bitrate="4000k",
+            audio_bitrate="192k",
             temp_audiofile="temp_audio.m4a",
-            remove_temp=True
+            remove_temp=True,
+            logger=None,
+            threads=2
         )
         final_video.close()
+        
+        # Apply strict subtitles using ffmpeg if requested
+        if use_subtitles:
+            try:
+                from .subtitle_generator import burn_captions
+                # Write dialogue_results to a temp manifest
+                temp_manifest_path = output_file.parent / "temp_subtitle_manifest.json"
+                # Dialogue results have start_ms and duration_ms
+                manifest_data = []
+                for res in dialogue_results:
+                    start = int(res.get("start_ms", 0))
+                    duration = float(res.get("duration_ms", 0))
+                    manifest_data.append({
+                        "speaker": res.get("speaker", ""),
+                        "text": res.get("text", ""),
+                        "start_ms": start,
+                        "end_ms": int(start + duration),
+                        "scene_id": res.get("scene_id", "")
+                    })
+                    
+                with open(temp_manifest_path, 'w', encoding='utf-8') as f:
+                    json.dump(manifest_data, f)
+                    
+                captioned_output = burn_captions(str(temp_manifest_path), str(output_file))
+                
+                # We return the captioned output
+                # Clean up temp manifest
+                temp_manifest_path.unlink(missing_ok=True)
+                return captioned_output
+            except Exception as e:
+                logger.error(f"Subtitle burning failed: {e}")
+                # Fallback to uncaptioned video
+                return str(output_file)
+
         return str(output_file)
     finally:
         for clip in final_clips:

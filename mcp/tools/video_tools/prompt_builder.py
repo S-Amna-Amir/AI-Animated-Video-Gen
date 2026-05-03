@@ -6,12 +6,14 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 DEFAULT_STYLE = "cinematic, highly detailed"
-QUALITY_BOOSTERS = "highly detailed, 8k, concept art, professional"
+QUALITY_BOOSTERS = "sharp focus, high detail, 8k"
 DEFAULT_NEGATIVE = (
-    "text, watermark, blurry, low quality, distorted, ugly, bad anatomy, duplicate"
+    "different art style, inconsistent character, face deformity, "
+    "multiple faces, text, watermark, blurry, low quality, cartoon, anime, illustration"
 )
 
 GLOBAL_STYLE_SUFFIX = "cinematic photography, 1960s cold war aesthetic, film noir lighting, 35mm film grain, consistent art direction throughout"
+STYLE_LOCK = "cinematic film photography, consistent character design, same art style throughout, 35mm film, unified color palette, professional cinematography"
 
 TONE_STYLE_MAP: dict[str, str] = {
     "mysterious": "dramatic lighting, deep shadows, cinematic atmosphere",
@@ -88,25 +90,12 @@ def build_dialogue_image_prompt(
     else:
         emotion = "calm, focused"
         
-    variation = f"variation version {line_index}"
-    
-    consistency_anchors = [
-        "cinematic still frame",
-        "consistent character design",
-        "same character appearance as previous scenes",
-        "character sheet consistent",
-        "unified art style"
-    ]
-
     positive_parts = [
-        location,
         char_anchor,
-        tone_style,
+        location,
         emotion,
-        ", ".join(consistency_anchors),
-        QUALITY_BOOSTERS,
-        GLOBAL_STYLE_SUFFIX,
-        variation
+        STYLE_LOCK,
+        QUALITY_BOOSTERS
     ]
     positive = ", ".join([part for part in positive_parts if part])
 

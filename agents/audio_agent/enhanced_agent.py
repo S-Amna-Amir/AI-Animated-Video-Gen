@@ -149,14 +149,15 @@ class EnhancedAudioAgent:
         self,
         scene_dialogues: List[Dict],
         scene_id: int
-    ) -> Optional[Path]:
+    ) -> tuple[Optional[Path], List[Dict]]:
         """
         Synthesize all dialogue for a single scene and concatenate into one audio file.
-        Returns path to concatenated scene audio.
+        Returns a tuple: (path to concatenated scene audio, list of dialogues with exact durations).
         """
         scene_audio_dir = self.run_manager.get_audio_scene_dir(scene_id)
         scene_audio_dir.mkdir(parents=True, exist_ok=True)
         
+        enriched_dialogues = []
         try:
             dialogue_files: List[Path] = []
             
@@ -179,7 +180,16 @@ class EnhancedAudioAgent:
                     output_file = Path(tts_result["audio_file"])
                     if output_file.exists():
                         dialogue_files.append(output_file)
-                        logger.info(f"  ✓ {speaker}: {text[:40]}...")
+                        # Ensure we capture exactly what TTS reported, or fallback
+                        dur_ms = tts_result.get("duration_ms", 1000)
+                        
+                        # We will update exact moviepy duration later just in case, but keep this for now
+                        d_copy = dialogue.copy()
+                        d_copy["duration_ms"] = dur_ms
+                        d_copy["audio_file"] = str(output_file)
+                        enriched_dialogues.append(d_copy)
+                        
+                        logger.info(f"  ✓ {speaker}: {text[:40]}... ({dur_ms}ms)")
                     
                 except Exception as e:
                     logger.warning(f"  ✗ Failed: {speaker} - {str(e)}")
@@ -187,28 +197,33 @@ class EnhancedAudioAgent:
             
             if not dialogue_files:
                 logger.warning(f"Scene {scene_id}: No dialogue files generated")
-                return None
+                return None, []
             
             editor, _ = _load_moviepy_modules()
             scene_audio_file = scene_audio_dir / f"scene{scene_id:02d}_voice.mp3"
             scene_clips = []
             try:
-                for audio_file in dialogue_files:
+                for idx, audio_file in enumerate(dialogue_files):
                     try:
-                        scene_clips.append(editor.AudioFileClip(str(audio_file)))
+                        clip = editor.AudioFileClip(str(audio_file))
+                        scene_clips.append(clip)
+                        # Overwrite with precise moviepy duration
+                        enriched_dialogues[idx]["duration_ms"] = int(clip.duration * 1000)
                     except Exception as e:
                         logger.warning(f"Failed to load {audio_file}: {str(e)}")
+                        # Remove the failed dialogue from enriched if we can't load it
+                        enriched_dialogues.pop(idx)
                         continue
 
                 if not scene_clips:
                     logger.warning(f"Scene {scene_id}: No valid audio after concatenation")
-                    return None
+                    return None, []
 
                 scene_audio = editor.concatenate_audioclips(scene_clips)
                 scene_audio.write_audiofile(str(scene_audio_file), logger=None)
 
                 logger.info(f"✓ Scene {scene_id} voice audio: {scene_audio.duration * 1000:.0f}ms")
-                return scene_audio_file
+                return scene_audio_file, enriched_dialogues
             finally:
                 for clip in scene_clips:
                     try:
@@ -218,7 +233,7 @@ class EnhancedAudioAgent:
             
         except Exception as e:
             logger.error(f"❌ Error synthesizing scene {scene_id}: {str(e)}")
-            return None
+            return None, []
     
     def _extract_mood_keyword(self, scene: Dict) -> str:
         """Generate scene-specific mood query using Groq analyzer with keyword fallback."""
@@ -427,7 +442,7 @@ class EnhancedAudioAgent:
                 logger.info(f"Processing {len(scene_dialogues)} lines...")
                 
                 # 3A: Synthesize voice
-                voice_file = await self._synthesize_scene_voiceovers(scene_dialogues, scene_id)
+                voice_file, enriched_dialogues = await self._synthesize_scene_voiceovers(scene_dialogues, scene_id)
                 if not voice_file or not voice_file.exists():
                     logger.warning(f"Failed to synthesize - skipping")
                     continue
@@ -452,18 +467,28 @@ class EnhancedAudioAgent:
                         scene_duration_ms = int(scene_audio.duration * 1000)
                         scene_audio.close()
 
-                        for dialogue in scene_dialogues:
+                        # Now append lines with correct individual start and end times
+                        current_line_start = cumulative_time_ms
+                        for dialogue in enriched_dialogues:
+                            line_dur = dialogue.get("duration_ms", 1000)
+                            line_end = current_line_start + line_dur
+                            
                             self.cumulative_timing.append({
                                 "scene_id": scene_id,
                                 "speaker": dialogue["speaker"],
                                 "text": dialogue["text"],
                                 "voice": dialogue["voice"],
+                                "start_ms": current_line_start,
+                                "end_ms": line_end,
+                                "duration_ms": line_dur,
                                 "cumulative_start_ms": cumulative_time_ms,
                                 "scene_duration_ms": scene_duration_ms,
                                 "bgm_used": scene_id in self.bgm_metadata,
                                 "bgm_info": self.bgm_metadata.get(scene_id),
-                                "audio_file": str(composed_file)
+                                "audio_file": str(composed_file),
+                                "individual_audio_file": dialogue.get("audio_file", "")
                             })
+                            current_line_start = line_end
 
                         cumulative_time_ms += scene_duration_ms
 
