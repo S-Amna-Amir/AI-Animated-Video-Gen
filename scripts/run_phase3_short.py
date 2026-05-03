@@ -30,27 +30,6 @@ class ShortVideoAgent(VideoAgent):
             # Limit to 3 items
             limited_manifest = scene_entries[:3]
             print(f"Limiting manifest to {len(limited_manifest)} items for scene {first_scene_id}")
-            
-            # Fetch actual duration for each individual dialogue line audio
-            try:
-                from mcp.tools.audio_tools.tts_tool import TTSTool
-                import os
-                
-                audio_dir = Path(phase2_run_dir) / "audio" / f"scene{int(first_scene_id):02d}" / f"scene{int(first_scene_id):02d}"
-                if audio_dir.exists():
-                    for entry in limited_manifest:
-                        speaker = entry.get("speaker", "").replace(" ", "_").upper()
-                        original_idx = scene_entries.index(entry)
-                        matched_file = str(audio_dir / f"{speaker}_line{original_idx+1:03d}.mp3")
-                        if os.path.exists(matched_file):
-                            duration_ms = TTSTool._get_audio_duration_ms(matched_file)
-                            entry["duration_ms"] = duration_ms
-                            print(f"Found exact duration for {speaker} line {original_idx+1}: {duration_ms}ms")
-                        else:
-                            print(f"File not found for exact duration mapping: {matched_file}")
-            except Exception as e:
-                print(f"Could not load exact durations: {e}")
-                
             return limited_manifest
         return manifest
 
