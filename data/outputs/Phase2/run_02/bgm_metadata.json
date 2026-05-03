@@ -1,33 +1,4 @@
 {
-  "scenes": {
-    "1": {
-      "query": "cinematic cold war",
-      "source": "freesound",
-      "name": "Stargazer Ambient Guitar Music",
-      "freesound_id": null,
-      "url": "https://freesound.org/people/Destructo20/sounds/668788/"
-    },
-    "2": {
-      "query": "tense spy atmosphere",
-      "source": "freesound",
-      "name": "scaryscape_digitalgangstha.wav",
-      "freesound_id": null,
-      "url": "https://freesound.org/people/suonho/sounds/58966/"
-    },
-    "3": {
-      "query": "tense spy action",
-      "source": "freesound",
-      "name": "Cinematic Hip-Hop Loop",
-      "freesound_id": null,
-      "url": "https://freesound.org/people/SergeQuadrado/sounds/683386/"
-    },
-    "4": {
-      "query": "tense secretive warning",
-      "source": "freesound",
-      "name": "Stargazer Ambient Guitar Music",
-      "freesound_id": null,
-      "url": "https://freesound.org/people/Destructo20/sounds/668788/"
-    }
-  },
-  "total_scenes_with_bgm": 4
+  "scenes": {},
+  "total_scenes_with_bgm": 0
 }

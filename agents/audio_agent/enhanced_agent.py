@@ -12,6 +12,11 @@ from typing import Dict, List, Optional, Any
 from datetime import datetime
 import logging
 import os
+import sys
+
+# Add project root to python path
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
 
 from mcp.tools.audio_tools.voice_mapper import VoiceMapper
 from mcp.tools.audio_tools.bgm_tool import search_and_download_bgm, BGMLocator

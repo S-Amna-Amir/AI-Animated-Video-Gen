@@ -1,10 +1,10 @@
 {
-  "workflow_id": "phase2_audio_20260429_120939",
-  "timestamp": "2026-04-29T12:09:39.902824",
+  "workflow_id": "phase2_audio_20260503_231233",
+  "timestamp": "2026-05-03T23:12:33.008516",
   "run_id": "run_02",
   "total_scenes": 4,
   "scenes_processed": 4,
-  "total_scenes_with_bgm": 4,
+  "total_scenes_with_bgm": 0,
   "master_audio_track": "data\\outputs\\Phase2\\run_02\\master_audio_track.mp3",
   "character_voices": {
     "JACK": "en-US-GuyNeural",

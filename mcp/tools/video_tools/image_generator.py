@@ -90,7 +90,7 @@ def generate_images_for_dialogue(
             "text": dialogue_text,
             "image_path": saved_path,
             "audio_file": str(entry.get("audio_file", "")),
-            "start_ms": int(entry.get("cumulative_start_ms", 0)),
+            "start_ms": int(entry.get("start_ms", entry.get("cumulative_start_ms", 0))),
             "duration_ms": duration_ms,
             "status": status,
             "error": error_msg
