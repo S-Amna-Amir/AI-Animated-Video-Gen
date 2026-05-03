@@ -4,288 +4,224 @@
     "speaker": "JACK",
     "text": "\"We can't keep her here for much longer, Rachel. The KGB will find her.\"",
     "voice": "en-US-GuyNeural",
+    "start_ms": 0,
+    "end_ms": 6140,
+    "duration_ms": 6140,
     "cumulative_start_ms": 0,
-    "scene_duration_ms": 27980,
-    "bgm_used": true,
-    "bgm_info": {
-      "query": "cinematic cold war",
-      "source": "freesound",
-      "name": "Stargazer Ambient Guitar Music",
-      "freesound_id": null,
-      "url": "https://freesound.org/people/Destructo20/sounds/668788/"
-    },
-    "audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene01\\scene01_composed.mp3"
+    "scene_duration_ms": 27950,
+    "bgm_used": false,
+    "bgm_info": null,
+    "audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene01\\scene01_voice.mp3",
+    "individual_audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene01\\scene01\\JACK_line001.mp3"
   },
   {
     "scene_id": 1,
     "speaker": "RACHEL",
     "text": "\"We'll get her out, Jack. We always do.\"",
     "voice": "en-US-AriaNeural",
+    "start_ms": 6140,
+    "end_ms": 10480,
+    "duration_ms": 4340,
     "cumulative_start_ms": 0,
-    "scene_duration_ms": 27980,
-    "bgm_used": true,
-    "bgm_info": {
-      "query": "cinematic cold war",
-      "source": "freesound",
-      "name": "Stargazer Ambient Guitar Music",
-      "freesound_id": null,
-      "url": "https://freesound.org/people/Destructo20/sounds/668788/"
-    },
-    "audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene01\\scene01_composed.mp3"
+    "scene_duration_ms": 27950,
+    "bgm_used": false,
+    "bgm_info": null,
+    "audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene01\\scene01_voice.mp3",
+    "individual_audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene01\\scene01\\RACHEL_line002.mp3"
   },
   {
     "scene_id": 1,
     "speaker": "JACK",
     "text": "\"Easy for you to say, Rachel. You're not the one who has to deal with the KGB on a daily basis.\"",
     "voice": "en-US-GuyNeural",
+    "start_ms": 10480,
+    "end_ms": 17730,
+    "duration_ms": 7250,
     "cumulative_start_ms": 0,
-    "scene_duration_ms": 27980,
-    "bgm_used": true,
-    "bgm_info": {
-      "query": "cinematic cold war",
-      "source": "freesound",
-      "name": "Stargazer Ambient Guitar Music",
-      "freesound_id": null,
-      "url": "https://freesound.org/people/Destructo20/sounds/668788/"
-    },
-    "audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene01\\scene01_composed.mp3"
+    "scene_duration_ms": 27950,
+    "bgm_used": false,
+    "bgm_info": null,
+    "audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene01\\scene01_voice.mp3",
+    "individual_audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene01\\scene01\\JACK_line003.mp3"
   },
   {
     "scene_id": 1,
     "speaker": "RACHEL",
     "text": "\"That's not the point, Jack. The point is we have a chance to defect a high-ranking Soviet official. We can't let it slip through our fingers.\"",
     "voice": "en-US-AriaNeural",
+    "start_ms": 17730,
+    "end_ms": 27910,
+    "duration_ms": 10180,
     "cumulative_start_ms": 0,
-    "scene_duration_ms": 27980,
-    "bgm_used": true,
-    "bgm_info": {
-      "query": "cinematic cold war",
-      "source": "freesound",
-      "name": "Stargazer Ambient Guitar Music",
-      "freesound_id": null,
-      "url": "https://freesound.org/people/Destructo20/sounds/668788/"
-    },
-    "audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene01\\scene01_composed.mp3"
-  },
-  {
-    "scene_id": 2,
-    "speaker": "VLADIMIR",
-    "text": "\"I don't know if I can trust you. I've been warned about the CIA's tactics.\"",
-    "voice": "en-GB-OliverNeural",
-    "cumulative_start_ms": 27980,
-    "scene_duration_ms": 13870,
-    "bgm_used": true,
-    "bgm_info": {
-      "query": "tense spy atmosphere",
-      "source": "freesound",
-      "name": "scaryscape_digitalgangstha.wav",
-      "freesound_id": null,
-      "url": "https://freesound.org/people/suonho/sounds/58966/"
-    },
-    "audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene02\\scene02_composed.mp3"
+    "scene_duration_ms": 27950,
+    "bgm_used": false,
+    "bgm_info": null,
+    "audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene01\\scene01_voice.mp3",
+    "individual_audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene01\\scene01\\RACHEL_line004.mp3"
   },
   {
     "scene_id": 2,
     "speaker": "JACK",
     "text": "\"Vladimir, we're here to help you. We'll get you out of Berlin and set you up with a new identity.\"",
     "voice": "en-US-GuyNeural",
-    "cumulative_start_ms": 27980,
-    "scene_duration_ms": 13870,
-    "bgm_used": true,
-    "bgm_info": {
-      "query": "tense spy atmosphere",
-      "source": "freesound",
-      "name": "scaryscape_digitalgangstha.wav",
-      "freesound_id": null,
-      "url": "https://freesound.org/people/suonho/sounds/58966/"
-    },
-    "audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene02\\scene02_composed.mp3"
+    "start_ms": 27950,
+    "end_ms": 34720,
+    "duration_ms": 6770,
+    "cumulative_start_ms": 27950,
+    "scene_duration_ms": 13840,
+    "bgm_used": false,
+    "bgm_info": null,
+    "audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene02\\scene02_voice.mp3",
+    "individual_audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene02\\scene02\\JACK_line002.mp3"
   },
   {
     "scene_id": 2,
     "speaker": "RACHEL",
     "text": "\"But first, you have to tell us what you know. About the Soviet Union's plans for Eastern Europe.\"",
     "voice": "en-US-AriaNeural",
-    "cumulative_start_ms": 27980,
-    "scene_duration_ms": 13870,
-    "bgm_used": true,
-    "bgm_info": {
-      "query": "tense spy atmosphere",
-      "source": "freesound",
-      "name": "scaryscape_digitalgangstha.wav",
-      "freesound_id": null,
-      "url": "https://freesound.org/people/suonho/sounds/58966/"
-    },
-    "audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene02\\scene02_composed.mp3"
-  },
-  {
-    "scene_id": 2,
-    "speaker": "VLADIMIR",
-    "text": "\"I'll tell you everything. But you have to promise me one thing.\"",
-    "voice": "en-GB-OliverNeural",
-    "cumulative_start_ms": 27980,
-    "scene_duration_ms": 13870,
-    "bgm_used": true,
-    "bgm_info": {
-      "query": "tense spy atmosphere",
-      "source": "freesound",
-      "name": "scaryscape_digitalgangstha.wav",
-      "freesound_id": null,
-      "url": "https://freesound.org/people/suonho/sounds/58966/"
-    },
-    "audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene02\\scene02_composed.mp3"
+    "start_ms": 34720,
+    "end_ms": 41750,
+    "duration_ms": 7030,
+    "cumulative_start_ms": 27950,
+    "scene_duration_ms": 13840,
+    "bgm_used": false,
+    "bgm_info": null,
+    "audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene02\\scene02_voice.mp3",
+    "individual_audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene02\\scene02\\RACHEL_line003.mp3"
   },
   {
     "scene_id": 3,
     "speaker": "ALEXANDRA",
     "text": "\"Jack, we have a problem. One of our own team members has been compromised. The KGB has a mole within the CIA.\"",
     "voice": "en-GB-SoniaNeural",
-    "cumulative_start_ms": 41850,
-    "scene_duration_ms": 16930,
-    "bgm_used": true,
-    "bgm_info": {
-      "query": "tense spy action",
-      "source": "freesound",
-      "name": "Cinematic Hip-Hop Loop",
-      "freesound_id": null,
-      "url": "https://freesound.org/people/SergeQuadrado/sounds/683386/"
-    },
-    "audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene03\\scene03_composed.mp3"
+    "start_ms": 41790,
+    "end_ms": 50210,
+    "duration_ms": 8420,
+    "cumulative_start_ms": 41790,
+    "scene_duration_ms": 16880,
+    "bgm_used": false,
+    "bgm_info": null,
+    "audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene03\\scene03_voice.mp3",
+    "individual_audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene03\\scene03\\ALEXANDRA_line001.mp3"
   },
   {
     "scene_id": 3,
     "speaker": "JACK",
     "text": "\"What are you talking about? Who is it?\"",
     "voice": "en-US-GuyNeural",
-    "cumulative_start_ms": 41850,
-    "scene_duration_ms": 16930,
-    "bgm_used": true,
-    "bgm_info": {
-      "query": "tense spy action",
-      "source": "freesound",
-      "name": "Cinematic Hip-Hop Loop",
-      "freesound_id": null,
-      "url": "https://freesound.org/people/SergeQuadrado/sounds/683386/"
-    },
-    "audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene03\\scene03_composed.mp3"
+    "start_ms": 50210,
+    "end_ms": 54050,
+    "duration_ms": 3840,
+    "cumulative_start_ms": 41790,
+    "scene_duration_ms": 16880,
+    "bgm_used": false,
+    "bgm_info": null,
+    "audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene03\\scene03_voice.mp3",
+    "individual_audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene03\\scene03\\JACK_line002.mp3"
   },
   {
     "scene_id": 3,
     "speaker": "ALEXANDRA",
     "text": "\"I'm not sure yet. But I think it's someone close to you, Jack.\"",
     "voice": "en-GB-SoniaNeural",
-    "cumulative_start_ms": 41850,
-    "scene_duration_ms": 16930,
-    "bgm_used": true,
-    "bgm_info": {
-      "query": "tense spy action",
-      "source": "freesound",
-      "name": "Cinematic Hip-Hop Loop",
-      "freesound_id": null,
-      "url": "https://freesound.org/people/SergeQuadrado/sounds/683386/"
-    },
-    "audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene03\\scene03_composed.mp3"
+    "start_ms": 54050,
+    "end_ms": 58630,
+    "duration_ms": 4580,
+    "cumulative_start_ms": 41790,
+    "scene_duration_ms": 16880,
+    "bgm_used": false,
+    "bgm_info": null,
+    "audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene03\\scene03_voice.mp3",
+    "individual_audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene03\\scene03\\ALEXANDRA_line003.mp3"
   },
   {
     "scene_id": 4,
     "speaker": "RACHEL",
     "text": "\"Hello, darling! I'll be right there.\"",
     "voice": "en-US-AriaNeural",
-    "cumulative_start_ms": 58780,
-    "scene_duration_ms": 23510,
-    "bgm_used": true,
-    "bgm_info": {
-      "query": "tense secretive warning",
-      "source": "freesound",
-      "name": "Stargazer Ambient Guitar Music",
-      "freesound_id": null,
-      "url": "https://freesound.org/people/Destructo20/sounds/668788/"
-    },
-    "audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene04\\scene04_composed.mp3"
+    "start_ms": 58670,
+    "end_ms": 62729,
+    "duration_ms": 4059,
+    "cumulative_start_ms": 58670,
+    "scene_duration_ms": 23460,
+    "bgm_used": false,
+    "bgm_info": null,
+    "audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene04\\scene04_voice.mp3",
+    "individual_audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene04\\scene04\\RACHEL_line001.mp3"
   },
   {
     "scene_id": 4,
     "speaker": "JACK",
     "text": "\"Who is it?\"",
     "voice": "en-US-GuyNeural",
-    "cumulative_start_ms": 58780,
-    "scene_duration_ms": 23510,
-    "bgm_used": true,
-    "bgm_info": {
-      "query": "tense secretive warning",
-      "source": "freesound",
-      "name": "Stargazer Ambient Guitar Music",
-      "freesound_id": null,
-      "url": "https://freesound.org/people/Destructo20/sounds/668788/"
-    },
-    "audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene04\\scene04_composed.mp3"
+    "start_ms": 62729,
+    "end_ms": 64389,
+    "duration_ms": 1660,
+    "cumulative_start_ms": 58670,
+    "scene_duration_ms": 23460,
+    "bgm_used": false,
+    "bgm_info": null,
+    "audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene04\\scene04_voice.mp3",
+    "individual_audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene04\\scene04\\JACK_line002.mp3"
   },
   {
     "scene_id": 4,
     "speaker": "RACHEL",
     "text": "\"It's my husband. He's on his way to the safehouse.\"",
     "voice": "en-US-AriaNeural",
-    "cumulative_start_ms": 58780,
-    "scene_duration_ms": 23510,
-    "bgm_used": true,
-    "bgm_info": {
-      "query": "tense secretive warning",
-      "source": "freesound",
-      "name": "Stargazer Ambient Guitar Music",
-      "freesound_id": null,
-      "url": "https://freesound.org/people/Destructo20/sounds/668788/"
-    },
-    "audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene04\\scene04_composed.mp3"
+    "start_ms": 64389,
+    "end_ms": 68999,
+    "duration_ms": 4610,
+    "cumulative_start_ms": 58670,
+    "scene_duration_ms": 23460,
+    "bgm_used": false,
+    "bgm_info": null,
+    "audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene04\\scene04_voice.mp3",
+    "individual_audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene04\\scene04\\RACHEL_line003.mp3"
   },
   {
     "scene_id": 4,
     "speaker": "JACK",
     "text": "\"Rachel, I don't think that's a good idea.\"",
     "voice": "en-US-GuyNeural",
-    "cumulative_start_ms": 58780,
-    "scene_duration_ms": 23510,
-    "bgm_used": true,
-    "bgm_info": {
-      "query": "tense secretive warning",
-      "source": "freesound",
-      "name": "Stargazer Ambient Guitar Music",
-      "freesound_id": null,
-      "url": "https://freesound.org/people/Destructo20/sounds/668788/"
-    },
-    "audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene04\\scene04_composed.mp3"
+    "start_ms": 68999,
+    "end_ms": 72169,
+    "duration_ms": 3170,
+    "cumulative_start_ms": 58670,
+    "scene_duration_ms": 23460,
+    "bgm_used": false,
+    "bgm_info": null,
+    "audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene04\\scene04_voice.mp3",
+    "individual_audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene04\\scene04\\JACK_line004.mp3"
   },
   {
     "scene_id": 4,
     "speaker": "RACHEL",
     "text": "\"Why not, Jack? He's my husband. I trust him.\"",
     "voice": "en-US-AriaNeural",
-    "cumulative_start_ms": 58780,
-    "scene_duration_ms": 23510,
-    "bgm_used": true,
-    "bgm_info": {
-      "query": "tense secretive warning",
-      "source": "freesound",
-      "name": "Stargazer Ambient Guitar Music",
-      "freesound_id": null,
-      "url": "https://freesound.org/people/Destructo20/sounds/668788/"
-    },
-    "audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene04\\scene04_composed.mp3"
+    "start_ms": 72169,
+    "end_ms": 78069,
+    "duration_ms": 5900,
+    "cumulative_start_ms": 58670,
+    "scene_duration_ms": 23460,
+    "bgm_used": false,
+    "bgm_info": null,
+    "audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene04\\scene04_voice.mp3",
+    "individual_audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene04\\scene04\\RACHEL_line005.mp3"
   },
   {
     "scene_id": 4,
     "speaker": "JACK",
     "text": "\"Because, Rachel, we don't know who we can trust anymore.\"",
     "voice": "en-US-GuyNeural",
-    "cumulative_start_ms": 58780,
-    "scene_duration_ms": 23510,
-    "bgm_used": true,
-    "bgm_info": {
-      "query": "tense secretive warning",
-      "source": "freesound",
-      "name": "Stargazer Ambient Guitar Music",
-      "freesound_id": null,
-      "url": "https://freesound.org/people/Destructo20/sounds/668788/"
-    },
-    "audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene04\\scene04_composed.mp3"
+    "start_ms": 78069,
+    "end_ms": 82099,
+    "duration_ms": 4030,
+    "cumulative_start_ms": 58670,
+    "scene_duration_ms": 23460,
+    "bgm_used": false,
+    "bgm_info": null,
+    "audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene04\\scene04_voice.mp3",
+    "individual_audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene04\\scene04\\JACK_line006.mp3"
   }
 ]

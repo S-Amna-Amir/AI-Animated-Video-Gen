@@ -1,6 +1,6 @@
 {
   "phase1_data_dir": "data\\outputs\\Phase1",
-  "freesound_api_available": true,
+  "freesound_api_available": false,
   "audio_engine": "moviepy",
   "voice_mapper_config": {
     "mappings": {
