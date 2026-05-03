@@ -1,0 +1,8 @@
+requests
+python-dotenv
+Pillow
+moviepy
+huggingface-hub
+ffmpeg-python
+imageio-ffmpeg
+pytest
