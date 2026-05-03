@@ -14,6 +14,7 @@
 - [🌟 Project Overview](#-project-overview)
 - [📋 Phase Status](#-phase-status)  
 - [🎤 Phase 2: Audio Generation](#-phase-2-audio-generation--integration) ← **COMPLETE**
+- [🎬 Phase 3: Video Generation](#-phase-3-video-generation--composition) ← **COMPLETE**
 - [🛠 Setup & Installation](#-setup--installation)
 - [🚀 Running the Pipeline](#-running-the-pipeline)
 - [📁 Project Structure](#-project-structure)
@@ -31,7 +32,7 @@ User Prompt
     ↓
 [Phase 2] Audio Generation & BGM Integration ✅
     ↓
-[Phase 3] Video Composition (Future)
+[Phase 3] Video Generation & Composition ✅
     ↓
 [Phase 4] Web Interface & Orchestration (Future)
     ↓
@@ -54,7 +55,7 @@ Each phase is an independent agentic module that:
 |-------|--------|-------------|
 | **Phase 1** | ⏳ Pending | LLM-based story & script generation |
 | **Phase 2** | ✅ **COMPLETE** | Audio synthesis with BGM layering |
-| **Phase 3** | ⏳ Pending | Image generation & video composition |
+| **Phase 3** | ✅ **COMPLETE** | Image generation, Ken Burns animation & video composition |
 | **Phase 4** | ⏳ Pending | Web dashboard & orchestration |
 | **Phase 5** | ⏳ Pending | Edit agent & versioned undo system |
 
@@ -216,6 +217,60 @@ agent = EnhancedAudioAgent(
 
 ---
 
+## 🎬 Phase 3: Video Generation & Composition
+
+**Status**: ✅ **FULLY IMPLEMENTED & TESTED**
+
+Phase 3 transforms Phase 1 scene data and Phase 2 timing manifests into a fully composed, animated video with subtitles. It handles per-dialogue image generation, dynamic Ken Burns animation, and precision audio-video synchronization.
+
+### Key Capabilities
+
+#### 🖼️ Dynamic Image Generation
+- **Hugging Face Inference API** - Generates high-quality images via `black-forest-labs/FLUX.1-schnell`
+- **Per-Dialogue Generation** - Generates unique visual frames for every line of dialogue based on emotion and tone
+- **Prompt Engineering** - Automatically constructs cinematic prompts using character appearances and settings
+
+#### 🎥 Ken Burns Animation & Filtering
+- **Dynamic FFmpeg Effects** - Smooth pan and zoom filters (zoom_in, pan_left, pan_right, dramatic_push)
+- **Mood-Based Visuals** - Automatically selects animation type and color grading based on scene tone (e.g., tense = dramatic push + high contrast)
+- **Aesthetics** - Cinematic vignette overlays and cross-fade transitions
+
+#### 🎬 Video Composition
+- **MoviePy Integration** - Seamlessly combines animated clips with Phase 2 master audio
+- **Subtitles** - Built-in subtitle burn-in using `TextClip` and `CompositeVideoClip`
+- **Synchronization** - Millisecond-accurate clip trimming based on dialogue duration
+
+### Module Architecture
+
+```
+mcp/tools/video_tools/
+├── image_generator.py     → Hugging Face API image generation orchestration
+├── animator.py            → FFmpeg Ken Burns & color filters
+├── video_compositor.py    → MoviePy timeline composition & subtitles
+├── prompt_builder.py      → Dynamic prompt generation
+├── comfy_client.py        → API client wrapper
+└── workflow_builder.py    → Workflow definitions
+
+agents/video_agent/
+├── agent.py               → Phase 3 orchestration
+├── run_manager.py         → Run directory & gap filling
+└── tests/test_phase3.py   → Comprehensive test suite
+```
+
+### Usage Examples
+
+#### Run Phase 3 Pipeline
+```bash
+python scripts/run_phase3.py --phase2-run data/outputs/Phase2/run_02
+```
+
+#### Run Mock Mode (No API Calls)
+```bash
+python scripts/run_phase3.py --phase2-run data/outputs/Phase2/run_02 --mock
+```
+
+---
+
 ## 🛠 Setup & Installation
 
 ### Prerequisites
@@ -284,13 +339,19 @@ AI-Animated-Video-Gen/
 ├── .env                              # API keys (not committed)
 │
 ├── agents/
-│   └── audio_agent/                  # Phase 2 ✅
+│   ├── audio_agent/                  # Phase 2 ✅
+│   │   ├── __init__.py
+│   │   ├── agent.py                  # Basic agent
+│   │   ├── enhanced_agent.py         # BGM-integrated agent ✨
+│   │   ├── run_manager.py            # Run management
+│   │   ├── planner.py               # Workflow planning
+│   │   ├── PHASE2_IMPLEMENTATION.md  # Full technical docs
+│   │   └── tests/
+│   │
+│   └── video_agent/                  # Phase 3 ✅
 │       ├── __init__.py
-│       ├── agent.py                  # Basic agent
-│       ├── enhanced_agent.py         # BGM-integrated agent ✨
-│       ├── run_manager.py            # Run management
-│       ├── planner.py               # Workflow planning
-│       ├── PHASE2_IMPLEMENTATION.md  # Full technical docs
+│       ├── agent.py
+│       ├── run_manager.py
 │       └── tests/
 │
 ├── mcp/tools/audio_tools/
@@ -307,7 +368,12 @@ AI-Animated-Video-Gen/
 │   │   │   ├── scene_manifest_auto.json
 │   │   │   └── character_db_auto.json
 │   │   │
-│   │   └── Phase2/                   # Phase 2 outputs ✅
+│   │   ├── Phase2/                   # Phase 2 outputs ✅
+│   │   │   ├── run_01/
+│   │   │   ├── run_02/
+│   │   │   └── ...
+│   │   │
+│   │   └── Phase3/                   # Phase 3 outputs ✅
 │   │       ├── run_01/
 │   │       ├── run_02/
 │   │       └── ...
@@ -356,8 +422,15 @@ Phase 2 JSON Outputs
 ├── audio/scene01/*.mp3 (individual dialogue files)
 └── master_audio_track.mp3 (final concatenated audio)
          ↓
-Phase 3 (Video Composition) - Future
-└─→ Uses timing_manifest.json for image-audio alignment
+Phase 3 Processing
+├─→ Image Gen: JSON + HF API → dialogue images
+├─→ Animator: images → Ken Burns video clips
+└─→ Compositor: clips + Phase 2 master audio → final video
+         ↓
+Phase 3 Outputs
+├── final_output.mp4 (Fully composed short film)
+├── phase3_output.json (Execution report)
+└── phase3_video_handoff.json (Phase 4 Dashboard ready)
 ```
 
 ---
