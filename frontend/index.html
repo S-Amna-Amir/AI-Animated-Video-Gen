@@ -1,0 +1,1535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CineForge — AI Video Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ── DESIGN TOKENS ───────────────────────────────────── */
+  :root {
+    --cream:   #FAF7F2;
+    --warm-white: #F5F0E8;
+    --sand:    #E8DFD0;
+    --taupe:   #C9BAA5;
+    --brown:   #7A5C3E;
+    --ink:     #2A1F14;
+    --accent:  #D4824A;
+    --accent2: #8BAE7B;
+    --accent3: #5B8FA8;
+    --muted:   #9C8B7A;
+    --border:  #DDD4C4;
+    --phase1:  #C9A96E;
+    --phase2:  #8BAE7B;
+    --phase3:  #5B8FA8;
+    --phase4:  #C97B8A;
+    --phase5:  #9B7EC8;
+    --success: #5F9E6E;
+    --error:   #C0504D;
+    --warn:    #D4924A;
+    --r: 12px;
+    --r-sm: 8px;
+    --shadow: 0 2px 16px rgba(42,31,20,.08);
+    --shadow-lg: 0 8px 40px rgba(42,31,20,.13);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  /* ── LAYOUT ──────────────────────────────────────────── */
+  .app { display: flex; min-height: 100vh; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 240px;
+    min-width: 240px;
+    background: var(--ink);
+    color: var(--cream);
+    display: flex;
+    flex-direction: column;
+    padding: 28px 0 20px;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 100;
+  }
+  .sidebar-logo {
+    padding: 0 24px 28px;
+    border-bottom: 1px solid rgba(255,255,255,.1);
+    margin-bottom: 20px;
+  }
+  .sidebar-logo h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: .02em;
+    color: var(--cream);
+  }
+  .sidebar-logo span { color: var(--accent); }
+  .sidebar-logo p { font-size: 11px; color: var(--taupe); margin-top: 3px; letter-spacing: .06em; text-transform: uppercase; }
+
+  .nav-section { padding: 0 12px; margin-bottom: 24px; }
+  .nav-label { font-size: 10px; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); padding: 0 12px; margin-bottom: 6px; }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px; border-radius: var(--r-sm);
+    cursor: pointer; font-size: 14px; font-weight: 400;
+    color: rgba(250,247,242,.7);
+    transition: all .18s;
+    border: none; background: none; width: 100%; text-align: left;
+  }
+  .nav-item:hover { background: rgba(255,255,255,.07); color: var(--cream); }
+  .nav-item.active { background: rgba(212,130,74,.18); color: var(--accent); font-weight: 500; }
+  .nav-item .nav-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .nav-item .badge {
+    margin-left: auto; font-size: 10px; padding: 2px 7px; border-radius: 99px;
+    font-weight: 600; letter-spacing: .04em;
+  }
+  .badge-done { background: rgba(95,158,110,.2); color: #8fcca0; }
+  .badge-pending { background: rgba(200,200,200,.1); color: var(--muted); }
+  .badge-running { background: rgba(212,130,74,.2); color: var(--accent); animation: pulse 1.4s infinite; }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+
+  .sidebar-footer {
+    margin-top: auto; padding: 16px 24px;
+    border-top: 1px solid rgba(255,255,255,.08);
+    font-size: 12px; color: var(--muted);
+  }
+
+  /* MAIN AREA */
+  .main {
+    margin-left: 240px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  /* TOPBAR */
+  .topbar {
+    background: var(--cream);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 32px;
+    display: flex; align-items: center; gap: 16px;
+    position: sticky; top: 0; z-index: 50;
+  }
+  .topbar h2 { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; flex: 1; }
+  .topbar-actions { display: flex; gap: 10px; }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 8px 18px; border-radius: var(--r-sm);
+    font-family: 'DM Sans', sans-serif; font-size: 13.5px; font-weight: 500;
+    cursor: pointer; border: none; transition: all .18s; white-space: nowrap;
+    text-decoration: none;
+  }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: #c0713a; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(212,130,74,.35); }
+  .btn-secondary { background: var(--warm-white); color: var(--ink); border: 1px solid var(--border); }
+  .btn-secondary:hover { background: var(--sand); }
+  .btn-ghost { background: none; color: var(--muted); border: 1px solid transparent; }
+  .btn-ghost:hover { background: var(--warm-white); color: var(--ink); }
+  .btn-danger { background: rgba(192,80,77,.1); color: var(--error); border: 1px solid rgba(192,80,77,.2); }
+  .btn-danger:hover { background: rgba(192,80,77,.2); }
+  .btn-sm { padding: 5px 12px; font-size: 12.5px; }
+  .btn:disabled { opacity: .45; cursor: not-allowed; transform: none !important; }
+  .btn-icon { padding: 8px; border-radius: var(--r-sm); }
+
+  /* CONTENT */
+  .content { padding: 32px; flex: 1; max-width: 1200px; }
+
+  /* ── PANELS / CARDS ───────────────────────────────────── */
+  .card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .card-header {
+    padding: 18px 24px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .card-header h3 { font-size: 15px; font-weight: 600; flex: 1; }
+  .card-body { padding: 20px 24px; }
+
+  .phase-icon {
+    width: 32px; height: 32px; border-radius: var(--r-sm);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; flex-shrink: 0;
+  }
+
+  /* ── PROMPT BOX ───────────────────────────────────────── */
+  .prompt-section { margin-bottom: 28px; }
+  .prompt-label { font-size: 13px; font-weight: 600; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; margin-bottom: 10px; }
+  .prompt-wrap { position: relative; }
+  .prompt-textarea {
+    width: 100%; min-height: 110px; resize: vertical;
+    background: white; border: 2px solid var(--border);
+    border-radius: var(--r); padding: 16px 18px;
+    font-family: 'DM Sans', sans-serif; font-size: 15px; color: var(--ink);
+    line-height: 1.6; transition: border .2s;
+    outline: none;
+  }
+  .prompt-textarea:focus { border-color: var(--accent); }
+  .prompt-textarea::placeholder { color: var(--taupe); }
+  .prompt-actions { margin-top: 12px; display: flex; gap: 10px; align-items: center; }
+  .prompt-examples { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .example-chip {
+    background: var(--warm-white); border: 1px solid var(--border);
+    border-radius: 99px; padding: 4px 12px; font-size: 12px; color: var(--brown);
+    cursor: pointer; transition: all .15s;
+  }
+  .example-chip:hover { background: var(--sand); border-color: var(--taupe); }
+
+  /* ── PIPELINE STATUS ─────────────────────────────────── */
+  .pipeline { display: flex; gap: 0; margin-bottom: 28px; position: relative; }
+  .pipeline::before {
+    content: ''; position: absolute;
+    top: 24px; left: 40px; right: 40px; height: 2px;
+    background: var(--border); z-index: 0;
+  }
+  .pipeline-step {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    gap: 8px; position: relative; z-index: 1;
+  }
+  .pipeline-step .step-circle {
+    width: 48px; height: 48px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 700;
+    border: 3px solid var(--border); background: white;
+    transition: all .3s; cursor: default;
+  }
+  .pipeline-step.done .step-circle { background: var(--success); border-color: var(--success); color: white; }
+  .pipeline-step.running .step-circle { background: var(--accent); border-color: var(--accent); color: white; animation: pulse 1s infinite; }
+  .pipeline-step.pending .step-circle { background: white; color: var(--taupe); }
+  .pipeline-step .step-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; text-align: center; }
+  .pipeline-step .step-sub { font-size: 10.5px; color: var(--taupe); text-align: center; }
+
+  /* ── PHASE CARDS GRID ────────────────────────────────── */
+  .phases-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 28px; }
+
+  .phase-card { transition: transform .2s, box-shadow .2s; }
+  .phase-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+
+  .phase-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11px; font-weight: 600; letter-spacing: .05em;
+    text-transform: uppercase; padding: 3px 9px;
+    border-radius: 99px;
+  }
+  .phase-badge.complete { background: rgba(95,158,110,.12); color: var(--success); }
+  .phase-badge.running { background: rgba(212,130,74,.12); color: var(--accent); }
+  .phase-badge.pending { background: rgba(156,139,122,.1); color: var(--muted); }
+  .phase-badge.error { background: rgba(192,80,77,.1); color: var(--error); }
+
+  .progress-bar { height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; margin: 10px 0; }
+  .progress-fill { height: 100%; border-radius: 99px; transition: width .6s ease; }
+
+  .phase-meta { font-size: 12.5px; color: var(--muted); margin-top: 6px; }
+  .phase-meta span { color: var(--ink); font-weight: 500; }
+
+  .phase-actions { margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+
+  /* ── LOG TERMINAL ─────────────────────────────────────── */
+  .terminal {
+    background: #1A1410; border-radius: var(--r);
+    border: 1px solid rgba(255,255,255,.06);
+    padding: 16px 18px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12.5px; line-height: 1.7;
+    color: #C8BBA8; max-height: 240px; overflow-y: auto;
+    position: relative;
+  }
+  .terminal::-webkit-scrollbar { width: 4px; }
+  .terminal::-webkit-scrollbar-track { background: transparent; }
+  .terminal::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 2px; }
+  .log-line { display: flex; gap: 10px; }
+  .log-time { color: #5C5040; flex-shrink: 0; }
+  .log-info { color: #8BAE7B; }
+  .log-warn { color: #D4924A; }
+  .log-error { color: #C0504D; }
+  .log-success { color: #8BAE7B; font-weight: 600; }
+  .cursor-blink::after {
+    content: '█'; animation: blink .8s infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  /* ── TABS ─────────────────────────────────────────────── */
+  .tabs { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 20px; gap: 0; }
+  .tab {
+    padding: 10px 20px; font-size: 13.5px; font-weight: 500;
+    cursor: pointer; border: none; background: none; color: var(--muted);
+    border-bottom: 2px solid transparent; margin-bottom: -2px;
+    transition: all .15s; display: flex; align-items: center; gap: 6px;
+  }
+  .tab:hover { color: var(--ink); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* ── VIDEO PREVIEW ───────────────────────────────────── */
+  .video-preview {
+    background: #0F0C09; border-radius: var(--r);
+    aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center;
+    position: relative; overflow: hidden; cursor: pointer;
+  }
+  .video-preview video { width: 100%; height: 100%; object-fit: contain; }
+  .video-placeholder { text-align: center; color: var(--taupe); }
+  .video-placeholder .icon { font-size: 48px; margin-bottom: 12px; opacity: .4; }
+  .video-placeholder p { font-size: 14px; }
+  .video-controls {
+    display: flex; gap: 10px; align-items: center; margin-top: 12px; flex-wrap: wrap;
+  }
+
+  /* ── EDIT PANEL ───────────────────────────────────────── */
+  .edit-section { margin-bottom: 24px; }
+  .edit-input-wrap { position: relative; }
+  .edit-input {
+    width: 100%; padding: 12px 50px 12px 16px;
+    background: white; border: 2px solid var(--border);
+    border-radius: var(--r-sm); font-family: 'DM Sans', sans-serif;
+    font-size: 14px; color: var(--ink); outline: none; transition: border .2s;
+  }
+  .edit-input:focus { border-color: var(--phase5); }
+  .edit-send {
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    width: 34px; height: 34px; border-radius: 8px;
+    background: var(--phase5); color: white; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; font-size: 16px;
+    transition: background .15s;
+  }
+  .edit-send:hover { background: #7d65b8; }
+
+  .edit-examples { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .edit-chip {
+    background: rgba(155,126,200,.08); border: 1px solid rgba(155,126,200,.2);
+    border-radius: 99px; padding: 4px 11px; font-size: 12px; color: var(--phase5);
+    cursor: pointer; transition: all .15s;
+  }
+  .edit-chip:hover { background: rgba(155,126,200,.15); }
+
+  /* ── VERSION HISTORY ─────────────────────────────────── */
+  .version-list { display: flex; flex-direction: column; gap: 10px; }
+  .version-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 12px 16px; background: var(--warm-white);
+    border: 1px solid var(--border); border-radius: var(--r-sm);
+    transition: all .15s; cursor: pointer;
+  }
+  .version-item:hover { background: var(--sand); }
+  .version-item.current { border-color: var(--accent); background: rgba(212,130,74,.05); }
+  .version-num {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--sand); display: flex; align-items: center;
+    justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0;
+  }
+  .version-item.current .version-num { background: var(--accent); color: white; }
+  .version-info { flex: 1; }
+  .version-info .v-title { font-size: 13.5px; font-weight: 500; }
+  .version-info .v-meta { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+  .version-actions { display: flex; gap: 6px; }
+
+  /* ── OUTPUT FILES ─────────────────────────────────────── */
+  .output-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .output-file {
+    background: var(--warm-white); border: 1px solid var(--border);
+    border-radius: var(--r-sm); padding: 14px;
+    display: flex; flex-direction: column; gap: 6px; cursor: pointer;
+    transition: all .15s;
+  }
+  .output-file:hover { background: var(--sand); transform: translateY(-1px); }
+  .output-file .file-icon { font-size: 22px; }
+  .output-file .file-name { font-size: 12.5px; font-weight: 600; word-break: break-all; }
+  .output-file .file-size { font-size: 11px; color: var(--muted); }
+
+  /* ── STATS ROW ────────────────────────────────────────── */
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 28px; }
+  .stat-card {
+    background: white; border: 1px solid var(--border);
+    border-radius: var(--r); padding: 18px 20px;
+  }
+  .stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 6px; }
+  .stat-value { font-size: 26px; font-family: 'Playfair Display', serif; font-weight: 700; color: var(--ink); }
+  .stat-sub { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+  /* ── NOTIFICATIONS ───────────────────────────────────── */
+  .toast-area { position: fixed; top: 20px; right: 20px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
+  .toast {
+    background: white; border: 1px solid var(--border); border-radius: var(--r-sm);
+    padding: 12px 16px; box-shadow: var(--shadow-lg);
+    display: flex; align-items: center; gap: 10px; font-size: 13.5px;
+    min-width: 280px; animation: slideIn .25s ease;
+  }
+  @keyframes slideIn { from{transform:translateX(40px);opacity:0} to{transform:translateX(0);opacity:1} }
+  .toast.success { border-left: 3px solid var(--success); }
+  .toast.error { border-left: 3px solid var(--error); }
+  .toast.info { border-left: 3px solid var(--accent3); }
+
+  /* ── CONFIG FORM ─────────────────────────────────────── */
+  .form-group { margin-bottom: 18px; }
+  .form-label { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 6px; display: block; }
+  .form-hint { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .form-input {
+    width: 100%; padding: 9px 12px; border: 1.5px solid var(--border);
+    border-radius: var(--r-sm); font-family: 'DM Sans', sans-serif;
+    font-size: 14px; background: white; color: var(--ink);
+    outline: none; transition: border .15s;
+  }
+  .form-input:focus { border-color: var(--accent); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .toggle-wrap { display: flex; align-items: center; gap: 10px; }
+  .toggle { width: 40px; height: 22px; background: var(--border); border-radius: 99px; position: relative; cursor: pointer; transition: background .2s; border: none; }
+  .toggle.on { background: var(--accent); }
+  .toggle::after { content:''; position: absolute; width: 16px; height: 16px; background: white; border-radius: 50%; top: 3px; left: 3px; transition: left .2s; }
+  .toggle.on::after { left: 21px; }
+
+  /* ── MODAL ───────────────────────────────────────────── */
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(42,31,20,.4);
+    backdrop-filter: blur(3px); z-index: 200;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity .2s;
+  }
+  .modal-backdrop.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: white; border-radius: var(--r); box-shadow: var(--shadow-lg);
+    width: 520px; max-width: 95vw; max-height: 90vh; overflow-y: auto;
+    transform: translateY(16px); transition: transform .2s;
+  }
+  .modal-backdrop.open .modal { transform: translateY(0); }
+  .modal-header { padding: 20px 24px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .modal-header h3 { font-size: 17px; font-weight: 700; font-family: 'Playfair Display', serif; }
+  .modal-body { padding: 20px 24px; }
+  .modal-footer { padding: 14px 24px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; }
+
+  /* ── INTENT PREVIEW ──────────────────────────────────── */
+  .intent-box {
+    background: rgba(155,126,200,.06); border: 1px solid rgba(155,126,200,.2);
+    border-radius: var(--r-sm); padding: 14px 16px; margin-top: 12px;
+    font-size: 13px;
+  }
+  .intent-row { display: flex; gap: 8px; margin-bottom: 6px; align-items: center; }
+  .intent-row:last-child { margin-bottom: 0; }
+  .intent-key { font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--phase5); width: 80px; flex-shrink: 0; }
+  .intent-val { font-family: 'DM Mono', monospace; font-size: 12.5px; background: rgba(155,126,200,.08); padding: 2px 7px; border-radius: 4px; }
+
+  /* ── SCROLLBAR ───────────────────────────────────────── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--sand); border-radius: 3px; }
+
+  /* ── UTILITIES ───────────────────────────────────────── */
+  .flex { display: flex; }
+  .items-center { align-items: center; }
+  .gap-2 { gap: 8px; }
+  .gap-3 { gap: 12px; }
+  .mt-1 { margin-top: 4px; }
+  .mt-2 { margin-top: 8px; }
+  .mt-3 { margin-top: 12px; }
+  .mb-4 { margin-bottom: 16px; }
+  .text-sm { font-size: 12.5px; }
+  .text-muted { color: var(--muted); }
+  .font-mono { font-family: 'DM Mono', monospace; }
+  .divider { height: 1px; background: var(--border); margin: 20px 0; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 600;
+  }
+  .chip-green { background: rgba(95,158,110,.12); color: var(--success); }
+  .chip-orange { background: rgba(212,130,74,.12); color: var(--accent); }
+  .chip-blue { background: rgba(91,143,168,.12); color: var(--accent3); }
+  .chip-purple { background: rgba(155,126,200,.12); color: var(--phase5); }
+
+  /* ── PAGE SECTIONS ───────────────────────────────────── */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ── RUNNING ANIMATION ───────────────────────────────── */
+  .spinner {
+    width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.3);
+    border-top-color: white; border-radius: 50%;
+    animation: spin .7s linear infinite; flex-shrink: 0;
+  }
+  @keyframes spin { to{transform:rotate(360deg)} }
+
+  /* wave loader */
+  .wave { display: flex; gap: 3px; align-items: flex-end; height: 18px; }
+  .wave span { width: 4px; background: var(--accent); border-radius: 2px; animation: wave .8s ease-in-out infinite; }
+  .wave span:nth-child(2){animation-delay:.1s}
+  .wave span:nth-child(3){animation-delay:.2s}
+  .wave span:nth-child(4){animation-delay:.3s}
+  .wave span:nth-child(5){animation-delay:.4s}
+  @keyframes wave { 0%,100%{height:4px}50%{height:16px} }
+
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ── SIDEBAR ──────────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <h1>Cine<span>Forge</span></h1>
+      <p>AI Video Studio</p>
+    </div>
+    <nav class="nav-section">
+      <div class="nav-label">Pipeline</div>
+      <button class="nav-item active" onclick="navigate('dashboard')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </button>
+      <button class="nav-item" onclick="navigate('generate')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        New Video
+      </button>
+      <button class="nav-item" onclick="navigate('phase1')">
+        <span class="nav-dot" style="background:var(--phase1)"></span>
+        Phase 1 — Story
+        <span class="badge badge-pending">idle</span>
+      </button>
+      <button class="nav-item" onclick="navigate('phase2')">
+        <span class="nav-dot" style="background:var(--phase2)"></span>
+        Phase 2 — Audio
+        <span class="badge badge-done">done</span>
+      </button>
+      <button class="nav-item" onclick="navigate('phase3')">
+        <span class="nav-dot" style="background:var(--phase3)"></span>
+        Phase 3 — Video
+        <span class="badge badge-done">done</span>
+      </button>
+    </nav>
+    <nav class="nav-section">
+      <div class="nav-label">Tools</div>
+      <button class="nav-item" onclick="navigate('edit')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+        Edit Agent
+        <span class="badge badge-done" style="background:rgba(155,126,200,.2);color:var(--phase5)">AI</span>
+      </button>
+      <button class="nav-item" onclick="navigate('history')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5M12 7v5l4 2"/></svg>
+        Version History
+      </button>
+      <button class="nav-item" onclick="navigate('outputs')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        Output Files
+      </button>
+      <button class="nav-item" onclick="navigate('settings')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <div>v1.0.0 — Phase 2 &amp; 3 Active</div>
+      <div style="margin-top:4px">FastAPI + LangGraph</div>
+    </div>
+  </aside>
+
+  <!-- ── MAIN ─────────────────────────────────────────── -->
+  <div class="main">
+    <header class="topbar">
+      <h2 id="pageTitle">Dashboard</h2>
+      <div class="topbar-actions">
+        <button class="btn btn-secondary btn-sm" onclick="showToast('Pipeline status refreshed','info')">
+          ↻ Refresh
+        </button>
+        <button class="btn btn-primary btn-sm" onclick="navigate('generate')">
+          + New Video
+        </button>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- ══ DASHBOARD ════════════════════════════════════ -->
+      <div id="page-dashboard" class="page active">
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-label">Videos Generated</div>
+            <div class="stat-value">3</div>
+            <div class="stat-sub">All time</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Latest Run</div>
+            <div class="stat-value" style="font-size:18px">run_02</div>
+            <div class="stat-sub">Phase 3 complete</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Total Audio Duration</div>
+            <div class="stat-value">4.2<span style="font-size:14px">m</span></div>
+            <div class="stat-sub">Across all runs</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Phases Active</div>
+            <div class="stat-value">2</div>
+            <div class="stat-sub">Phase 2 &amp; 3</div>
+          </div>
+        </div>
+
+        <!-- Pipeline progress -->
+        <div class="card mb-4" style="margin-bottom:20px">
+          <div class="card-header">
+            <div class="phase-icon" style="background:rgba(212,130,74,.1)">🔗</div>
+            <h3>Pipeline Overview</h3>
+          </div>
+          <div class="card-body">
+            <div class="pipeline">
+              <div class="pipeline-step done">
+                <div class="step-circle">✓</div>
+                <div class="step-label">Story</div>
+                <div class="step-sub">Phase 1</div>
+              </div>
+              <div class="pipeline-step done">
+                <div class="step-circle">✓</div>
+                <div class="step-label">Audio</div>
+                <div class="step-sub">Phase 2</div>
+              </div>
+              <div class="pipeline-step done">
+                <div class="step-circle">✓</div>
+                <div class="step-label">Video</div>
+                <div class="step-sub">Phase 3</div>
+              </div>
+              <div class="pipeline-step pending">
+                <div class="step-circle" style="font-size:12px">4</div>
+                <div class="step-label">Web App</div>
+                <div class="step-sub">Phase 4</div>
+              </div>
+              <div class="pipeline-step pending">
+                <div class="step-circle" style="font-size:12px">5</div>
+                <div class="step-label">Edit AI</div>
+                <div class="step-sub">Phase 5</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Phase cards -->
+        <div class="phases-grid">
+          <div class="card phase-card" onclick="navigate('phase1')">
+            <div class="card-header">
+              <div class="phase-icon" style="background:rgba(201,169,110,.12)">📖</div>
+              <h3>Phase 1 — Story &amp; Script</h3>
+              <span class="phase-badge pending">Pending</span>
+            </div>
+            <div class="card-body">
+              <div class="progress-bar"><div class="progress-fill" style="width:0%;background:var(--phase1)"></div></div>
+              <div class="phase-meta">LLM-based narrative generator. <span>Waiting for integration.</span></div>
+              <div class="phase-actions">
+                <button class="btn btn-secondary btn-sm">Configure LLM</button>
+                <button class="btn btn-secondary btn-sm" disabled>Run Phase 1</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card phase-card" onclick="navigate('phase2')">
+            <div class="card-header">
+              <div class="phase-icon" style="background:rgba(139,174,123,.12)">🎵</div>
+              <h3>Phase 2 — Audio</h3>
+              <span class="phase-badge complete">Complete</span>
+            </div>
+            <div class="card-body">
+              <div class="progress-bar"><div class="progress-fill" style="width:100%;background:var(--phase2)"></div></div>
+              <div class="phase-meta">Run <span>run_02</span> · <span>17 dialogue lines</span> · <span>4 scenes</span></div>
+              <div class="phase-actions">
+                <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();rerunPhase(2)">↻ Re-run</button>
+                <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();navigate('outputs')">View Files</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card phase-card" onclick="navigate('phase3')">
+            <div class="card-header">
+              <div class="phase-icon" style="background:rgba(91,143,168,.12)">🎬</div>
+              <h3>Phase 3 — Video</h3>
+              <span class="phase-badge complete">Complete</span>
+            </div>
+            <div class="card-body">
+              <div class="progress-bar"><div class="progress-fill" style="width:100%;background:var(--phase3)"></div></div>
+              <div class="phase-meta">Run <span>run_02</span> · <span>final_output.mp4</span> ready</div>
+              <div class="phase-actions">
+                <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();rerunPhase(3)">↻ Re-run</button>
+                <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();openVideoPreview()">▶ Preview</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card phase-card" onclick="navigate('edit')">
+            <div class="card-header">
+              <div class="phase-icon" style="background:rgba(155,126,200,.12)">✏️</div>
+              <h3>Phase 5 — Edit Agent</h3>
+              <span class="phase-badge pending">Ready</span>
+            </div>
+            <div class="card-body">
+              <div class="progress-bar"><div class="progress-fill" style="width:0%;background:var(--phase5)"></div></div>
+              <div class="phase-meta">AI-powered editing with <span>undo &amp; version control</span></div>
+              <div class="phase-actions">
+                <button class="btn btn-ghost btn-sm" style="border-color:var(--phase5);color:var(--phase5)">Open Editor →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live log -->
+        <div class="card">
+          <div class="card-header">
+            <div class="phase-icon" style="background:rgba(42,31,20,.06)">📋</div>
+            <h3>Live System Log</h3>
+            <button class="btn btn-ghost btn-sm" onclick="clearLog()">Clear</button>
+          </div>
+          <div class="card-body" style="padding:0">
+            <div class="terminal" id="mainLog">
+              <div class="log-line"><span class="log-time">09:14:02</span><span class="log-success">✓ Phase 3 complete — final_output.mp4 saved to data/outputs/Phase3/run_02</span></div>
+              <div class="log-line"><span class="log-time">09:13:55</span><span class="log-info">  Video composition: 4 scenes × 3 clips = 12 total clips</span></div>
+              <div class="log-line"><span class="log-time">09:13:40</span><span class="log-info">  Ken Burns animation applied: zoom_in × 3, dramatic_push × 2, pan_right × 2</span></div>
+              <div class="log-line"><span class="log-time">09:13:12</span><span class="log-info">  HuggingFace FLUX.1-schnell: 12 images generated</span></div>
+              <div class="log-line"><span class="log-time">09:12:05</span><span class="log-success">✓ Phase 2 complete — master_audio_track.mp3 created</span></div>
+              <div class="log-line"><span class="log-time">09:11:50</span><span class="log-info">  MoviePy: 4 scenes layered with BGM (vol=0.2)</span></div>
+              <div class="log-line"><span class="log-time">09:11:20</span><span class="log-info">  Freesound: "dark synth ambient" → scene 1 BGM downloaded</span></div>
+              <div class="log-line"><span class="log-time">09:10:44</span><span class="log-info">  Edge-TTS: 17 dialogue lines synthesized</span></div>
+              <div class="log-line"><span class="log-time">09:10:30</span><span class="log-info">  Loading scene_manifest_auto.json — 4 scenes, 17 dialogues</span></div>
+              <div class="log-line"><span class="log-time">09:10:28</span><span class="log-success">✓ Pipeline started — run_02</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ NEW VIDEO ══════════════════════════════════════ -->
+      <div id="page-generate" class="page">
+        <div class="card" style="max-width:780px">
+          <div class="card-header">
+            <div class="phase-icon" style="background:rgba(212,130,74,.1)">✨</div>
+            <h3>Generate New Video</h3>
+          </div>
+          <div class="card-body">
+            <div class="prompt-section">
+              <div class="prompt-label">Your Story Prompt</div>
+              <div class="prompt-wrap">
+                <textarea class="prompt-textarea" id="promptInput" placeholder="Describe your story... e.g. A young astronaut discovers a hidden ocean on Mars, and must decide whether to reveal her findings to the world."></textarea>
+              </div>
+              <div class="prompt-examples">
+                <span class="example-chip" onclick="usePrompt(this)">A spy thriller set in 1960s Berlin</span>
+                <span class="example-chip" onclick="usePrompt(this)">A robot who learns to paint in post-apocalyptic Tokyo</span>
+                <span class="example-chip" onclick="usePrompt(this)">An underwater expedition discovers an ancient civilisation</span>
+                <span class="example-chip" onclick="usePrompt(this)">A child befriends a lonely lighthouse keeper</span>
+              </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="form-row" style="margin-bottom:20px">
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Scenes</label>
+                <select class="form-input" id="sceneCount">
+                  <option>3 scenes</option>
+                  <option selected>4 scenes</option>
+                  <option>5 scenes</option>
+                  <option>6 scenes</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Art Style</label>
+                <select class="form-input" id="artStyle">
+                  <option>Cinematic (1960s film noir)</option>
+                  <option>Watercolour illustration</option>
+                  <option>Sci-fi photorealistic</option>
+                  <option>Animated flat design</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row" style="margin-bottom:20px">
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">LLM Provider (Phase 1)</label>
+                <select class="form-input">
+                  <option>Claude (claude-sonnet-4-6)</option>
+                  <option>GPT-4</option>
+                  <option>Ollama (local)</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Voice Engine (Phase 2)</label>
+                <select class="form-input">
+                  <option selected>Edge-TTS (Microsoft Neural)</option>
+                  <option>ElevenLabs API</option>
+                  <option>Coqui TTS (local)</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:16px;align-items:center;margin-bottom:18px">
+              <div class="toggle-wrap">
+                <button class="toggle on" id="toggleBgm" onclick="toggleBtn(this)"></button>
+                <span class="text-sm">Background Music (Freesound)</span>
+              </div>
+              <div class="toggle-wrap">
+                <button class="toggle on" id="toggleSubs" onclick="toggleBtn(this)"></button>
+                <span class="text-sm">Subtitles</span>
+              </div>
+              <div class="toggle-wrap">
+                <button class="toggle" id="toggleMock" onclick="toggleBtn(this)"></button>
+                <span class="text-sm">Mock Mode (no API calls)</span>
+              </div>
+            </div>
+
+            <div class="prompt-actions">
+              <button class="btn btn-primary" id="generateBtn" onclick="startGeneration()">
+                <span id="genBtnInner">▶ &nbsp;Start Full Pipeline</span>
+              </button>
+              <button class="btn btn-secondary" onclick="navigate('dashboard')">Cancel</button>
+              <span class="text-sm text-muted" id="genStatus" style="margin-left:8px"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live progress when running -->
+        <div id="genProgressCard" class="card" style="max-width:780px;margin-top:20px;display:none">
+          <div class="card-header">
+            <div class="wave"><span></span><span></span><span></span><span></span><span></span></div>
+            <h3 style="margin-left:8px">Pipeline Running...</h3>
+            <button class="btn btn-danger btn-sm" onclick="cancelGeneration()">✕ Cancel</button>
+          </div>
+          <div class="card-body">
+            <div id="livePhaseProgress" style="margin-bottom:16px">
+              <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+                <span id="currentPhaseLabel">Phase 1 — Generating story...</span>
+                <span id="currentPct">0%</span>
+              </div>
+              <div class="progress-bar" style="height:10px">
+                <div class="progress-fill" id="liveBar" style="width:0%;background:var(--accent)"></div>
+              </div>
+            </div>
+            <div class="terminal" id="liveLog" style="max-height:180px"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ PHASE 1 ══════════════════════════════════════ -->
+      <div id="page-phase1" class="page">
+        <div class="card">
+          <div class="card-header">
+            <div class="phase-icon" style="background:rgba(201,169,110,.12)">📖</div>
+            <h3>Phase 1 — Story, Script &amp; Character Design</h3>
+            <span class="phase-badge pending">Not yet integrated</span>
+          </div>
+          <div class="card-body">
+            <div style="display:flex;gap:20px;flex-wrap:wrap">
+              <div style="flex:1;min-width:280px">
+                <p class="text-muted text-sm" style="margin-bottom:14px">Phase 1 uses an LLM (Claude / GPT-4 / Ollama) to transform a raw prompt into a structured JSON output with scenes, dialogue, characters and visual descriptions.</p>
+                <div class="form-group">
+                  <label class="form-label">Output Location</label>
+                  <div class="font-mono" style="background:var(--warm-white);padding:8px 12px;border-radius:var(--r-sm);font-size:12.5px;color:var(--brown)">data/outputs/Phase1/scene_manifest_auto.json</div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Required Files</label>
+                  <div class="font-mono" style="background:var(--warm-white);padding:8px 12px;border-radius:var(--r-sm);font-size:12px;color:var(--brown);line-height:2">
+                    scene_manifest_auto.json<br>
+                    character_db_auto.json
+                  </div>
+                </div>
+              </div>
+              <div style="flex:1;min-width:280px">
+                <div class="form-group">
+                  <label class="form-label">Manual Upload (Bypass Phase 1)</label>
+                  <div style="border:2px dashed var(--border);border-radius:var(--r);padding:24px;text-align:center;cursor:pointer" onclick="document.getElementById('p1Upload').click()">
+                    <div style="font-size:28px;margin-bottom:8px">📂</div>
+                    <div class="text-sm text-muted">Drop scene_manifest.json here or click to browse</div>
+                    <input type="file" id="p1Upload" accept=".json" style="display:none" onchange="uploadP1File(event)">
+                  </div>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="loadSampleData()">Load Sample Phase 1 Data</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ PHASE 2 ══════════════════════════════════════ -->
+      <div id="page-phase2" class="page">
+        <div class="tabs">
+          <button class="tab active" onclick="switchTab('p2','overview')">Overview</button>
+          <button class="tab" onclick="switchTab('p2','voices')">Voice Mapping</button>
+          <button class="tab" onclick="switchTab('p2','bgm')">Background Music</button>
+          <button class="tab" onclick="switchTab('p2','manifest')">Timing Manifest</button>
+        </div>
+
+        <div id="p2-overview" class="tab-content active">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+            <div class="card">
+              <div class="card-header"><div class="phase-icon" style="background:rgba(139,174,123,.12)">🎤</div><h3>TTS Synthesis</h3><span class="phase-badge complete">Complete</span></div>
+              <div class="card-body">
+                <div class="stats-row" style="grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+                  <div class="stat-card" style="padding:12px 14px"><div class="stat-label">Dialogues</div><div class="stat-value">17</div></div>
+                  <div class="stat-card" style="padding:12px 14px"><div class="stat-label">Duration</div><div class="stat-value">4.2m</div></div>
+                </div>
+                <div class="phase-meta">Engine: <span>Microsoft Edge-TTS Neural</span><br>Characters: <span>4 unique voices assigned</span></div>
+                <div class="phase-actions">
+                  <button class="btn btn-primary btn-sm" onclick="rerunPhase(2)">↻ Re-run TTS only</button>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header"><div class="phase-icon" style="background:rgba(139,174,123,.12)">🎵</div><h3>BGM Integration</h3><span class="phase-badge complete">Complete</span></div>
+              <div class="card-body">
+                <div class="stats-row" style="grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+                  <div class="stat-card" style="padding:12px 14px"><div class="stat-label">Scenes w/ BGM</div><div class="stat-value">4</div></div>
+                  <div class="stat-card" style="padding:12px 14px"><div class="stat-label">Source</div><div class="stat-value" style="font-size:14px">Freesound</div></div>
+                </div>
+                <div class="phase-meta">Vol ducking: <span>-20dB</span> · Fade: <span>500ms</span><br>Engine: <span>MoviePy AudioFileClip</span></div>
+                <div class="phase-actions">
+                  <button class="btn btn-secondary btn-sm" onclick="rerunPhase(2)">↻ Re-run BGM only</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="p2-voices" class="tab-content">
+          <div class="card">
+            <div class="card-header"><h3>Character Voice Assignments</h3></div>
+            <div class="card-body">
+              <table style="width:100%;border-collapse:collapse;font-size:13.5px">
+                <thead><tr style="border-bottom:2px solid var(--border)">
+                  <th style="text-align:left;padding:8px 12px;color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase">Character</th>
+                  <th style="text-align:left;padding:8px 12px;color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase">Voice</th>
+                  <th style="text-align:left;padding:8px 12px;color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase">Locale</th>
+                  <th style="text-align:left;padding:8px 12px;color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase">Lines</th>
+                  <th></th>
+                </tr></thead>
+                <tbody id="voiceTable">
+                  <tr style="border-bottom:1px solid var(--border)"><td style="padding:10px 12px">JACK</td><td style="padding:10px 12px" class="font-mono text-sm">en-US-GuyNeural</td><td style="padding:10px 12px"><span class="chip chip-blue">American Male</span></td><td style="padding:10px 12px">6</td><td style="padding:10px 12px"><button class="btn btn-ghost btn-sm">Change</button></td></tr>
+                  <tr style="border-bottom:1px solid var(--border)"><td style="padding:10px 12px">RACHEL</td><td style="padding:10px 12px" class="font-mono text-sm">en-US-AriaNeural</td><td style="padding:10px 12px"><span class="chip chip-green">American Female</span></td><td style="padding:10px 12px">5</td><td style="padding:10px 12px"><button class="btn btn-ghost btn-sm">Change</button></td></tr>
+                  <tr style="border-bottom:1px solid var(--border)"><td style="padding:10px 12px">VLADIMIR</td><td style="padding:10px 12px" class="font-mono text-sm">en-GB-OliverNeural</td><td style="padding:10px 12px"><span class="chip chip-orange">British Male</span></td><td style="padding:10px 12px">4</td><td style="padding:10px 12px"><button class="btn btn-ghost btn-sm">Change</button></td></tr>
+                  <tr><td style="padding:10px 12px">NARRATOR</td><td style="padding:10px 12px" class="font-mono text-sm">en-US-ArthurNeural</td><td style="padding:10px 12px"><span class="chip chip-purple">Neural Narrator</span></td><td style="padding:10px 12px">2</td><td style="padding:10px 12px"><button class="btn btn-ghost btn-sm">Change</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div id="p2-bgm" class="tab-content">
+          <div class="card">
+            <div class="card-header"><h3>BGM per Scene</h3></div>
+            <div class="card-body">
+              <div style="display:flex;flex-direction:column;gap:12px">
+                <div style="padding:14px;background:var(--warm-white);border-radius:var(--r-sm);border:1px solid var(--border)">
+                  <div style="display:flex;justify-content:space-between;margin-bottom:6px"><strong>Scene 1</strong><span class="chip chip-orange">Freesound</span></div>
+                  <div class="text-sm text-muted">Query: <span class="font-mono" style="color:var(--brown)">"dark synth ambient"</span> · Name: Dark Ambient Loop · ID: 392841</div>
+                </div>
+                <div style="padding:14px;background:var(--warm-white);border-radius:var(--r-sm);border:1px solid var(--border)">
+                  <div style="display:flex;justify-content:space-between;margin-bottom:6px"><strong>Scene 2</strong><span class="chip chip-orange">Freesound</span></div>
+                  <div class="text-sm text-muted">Query: <span class="font-mono" style="color:var(--brown)">"tense cinematic pulse"</span> · Name: Tension Underscore · ID: 402213</div>
+                </div>
+                <div style="padding:14px;background:var(--warm-white);border-radius:var(--r-sm);border:1px solid var(--border)">
+                  <div style="display:flex;justify-content:space-between;margin-bottom:6px"><strong>Scene 3</strong><span class="chip chip-blue">Fallback</span></div>
+                  <div class="text-sm text-muted">Using <span class="font-mono" style="color:var(--brown)">neutral_ambient.mp3</span> from local library</div>
+                </div>
+                <div style="padding:14px;background:var(--warm-white);border-radius:var(--r-sm);border:1px solid var(--border)">
+                  <div style="display:flex;justify-content:space-between;margin-bottom:6px"><strong>Scene 4</strong><span class="chip chip-orange">Freesound</span></div>
+                  <div class="text-sm text-muted">Query: <span class="font-mono" style="color:var(--brown)">"ambient interior calm"</span> · Name: Quiet Room Loop · ID: 415091</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="p2-manifest" class="tab-content">
+          <div class="card">
+            <div class="card-header"><h3>Timing Manifest Preview</h3><button class="btn btn-secondary btn-sm" onclick="downloadManifest()">⬇ Download JSON</button></div>
+            <div class="card-body" style="padding:0">
+              <div class="terminal" style="max-height:340px;border-radius:0 0 var(--r) var(--r)">
+<pre style="color:#C8BBA8">[
+  {
+    "scene_id": 1,
+    "speaker": "JACK",
+    "audio_file": "data/outputs/Phase2/run_02/audio/scene01/JACK_line001.mp3",
+    "start_ms": 0,
+    "end_ms": 2250,
+    "duration_ms": 2250,
+    "text": "We can't keep her here for much longer, Rachel.",
+    "voice": "en-US-GuyNeural",
+    "bgm_used": true
+  },
+  {
+    "scene_id": 1,
+    "speaker": "RACHEL",
+    "audio_file": "data/outputs/Phase2/run_02/audio/scene01/RACHEL_line002.mp3",
+    "start_ms": 2250,
+    "end_ms": 4800,
+    "duration_ms": 2550,
+    "text": "I know. We move her at dawn.",
+    "voice": "en-US-AriaNeural",
+    "bgm_used": true
+  }
+]</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ PHASE 3 ══════════════════════════════════════ -->
+      <div id="page-phase3" class="page">
+        <div class="tabs">
+          <button class="tab active" onclick="switchTab('p3','overview')">Overview</button>
+          <button class="tab" onclick="switchTab('p3','preview')">Video Preview</button>
+          <button class="tab" onclick="switchTab('p3','scenes')">Scene Images</button>
+        </div>
+
+        <div id="p3-overview" class="tab-content active">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:20px">
+            <div class="stat-card"><div class="stat-label">Images Generated</div><div class="stat-value">12</div><div class="stat-sub">FLUX.1-schnell via HF API</div></div>
+            <div class="stat-card"><div class="stat-label">Clips Animated</div><div class="stat-value">12</div><div class="stat-sub">Ken Burns FFmpeg</div></div>
+            <div class="stat-card"><div class="stat-label">Video Duration</div><div class="stat-value">4.2<span style="font-size:14px">m</span></div><div class="stat-sub">final_output.mp4</div></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="phase-icon" style="background:rgba(91,143,168,.12)">🎬</div><h3>Composition Details</h3><span class="phase-badge complete">Complete</span></div>
+            <div class="card-body">
+              <div class="form-row">
+                <div>
+                  <div class="form-label">Image Model</div>
+                  <div class="text-sm">black-forest-labs/FLUX.1-schnell</div>
+                  <div class="form-label" style="margin-top:14px">Animation Effects</div>
+                  <div class="text-sm">zoom_in · pan_left · pan_right · dramatic_push</div>
+                </div>
+                <div>
+                  <div class="form-label">Color Grading</div>
+                  <div class="text-sm">Per-tone: mysterious → contrast 1.1 · tense → saturation 1.2</div>
+                  <div class="form-label" style="margin-top:14px">Transitions</div>
+                  <div class="text-sm">CrossFadeIn 0.4s between scenes</div>
+                </div>
+              </div>
+              <div class="phase-actions" style="margin-top:16px">
+                <button class="btn btn-primary btn-sm" onclick="rerunPhase(3)">↻ Re-run Video</button>
+                <button class="btn btn-secondary btn-sm" onclick="switchTab('p3','preview')">▶ Preview</button>
+                <button class="btn btn-secondary btn-sm">⬇ Download MP4</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="p3-preview" class="tab-content">
+          <div class="video-preview" onclick="togglePlay()">
+            <div class="video-placeholder">
+              <div class="icon">🎬</div>
+              <p>final_output.mp4 ready</p>
+              <p class="text-sm text-muted" style="margin-top:6px">Click to play (connect backend to stream)</p>
+            </div>
+          </div>
+          <div class="video-controls">
+            <button class="btn btn-primary btn-sm">▶ Play</button>
+            <button class="btn btn-secondary btn-sm">⬇ Download MP4</button>
+            <button class="btn btn-secondary btn-sm" onclick="navigate('edit')">✏️ Open in Editor</button>
+            <span class="text-sm text-muted font-mono">final_output.mp4 · 4:12 · 1920×1080</span>
+          </div>
+        </div>
+
+        <div id="p3-scenes" class="tab-content">
+          <div class="card">
+            <div class="card-header"><h3>Generated Scene Images</h3></div>
+            <div class="card-body">
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+                <!-- Scene image placeholders -->
+                <div style="aspect-ratio:1;background:var(--ink);border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;color:var(--taupe);font-size:12px;flex-direction:column;gap:6px"><div>Scene 1-0</div><div class="text-muted" style="font-size:10px">JACK</div></div>
+                <div style="aspect-ratio:1;background:#1A1008;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;color:var(--taupe);font-size:12px;flex-direction:column;gap:6px"><div>Scene 1-1</div><div class="text-muted" style="font-size:10px">RACHEL</div></div>
+                <div style="aspect-ratio:1;background:#0A1018;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;color:var(--taupe);font-size:12px;flex-direction:column;gap:6px"><div>Scene 2-0</div><div class="text-muted" style="font-size:10px">VLADIMIR</div></div>
+                <div style="aspect-ratio:1;background:#101A0A;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;color:var(--taupe);font-size:12px;flex-direction:column;gap:6px"><div>Scene 2-1</div><div class="text-muted" style="font-size:10px">JACK</div></div>
+                <div style="aspect-ratio:1;background:#18100A;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;color:var(--taupe);font-size:12px;flex-direction:column;gap:6px"><div>Scene 3-0</div><div class="text-muted" style="font-size:10px">NARRATOR</div></div>
+                <div style="aspect-ratio:1;background:#0A1018;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;color:var(--taupe);font-size:12px;flex-direction:column;gap:6px"><div>Scene 3-1</div><div class="text-muted" style="font-size:10px">RACHEL</div></div>
+                <div style="aspect-ratio:1;background:#1A0A10;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;color:var(--taupe);font-size:12px;flex-direction:column;gap:6px"><div>Scene 4-0</div><div class="text-muted" style="font-size:10px">VLADIMIR</div></div>
+                <div style="aspect-ratio:1;background:#0A1818;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;color:var(--taupe);font-size:12px;flex-direction:column;gap:6px"><div>Scene 4-1</div><div class="text-muted" style="font-size:10px">JACK</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ EDIT AGENT ════════════════════════════════════ -->
+      <div id="page-edit" class="page">
+        <div style="display:grid;grid-template-columns:1fr 360px;gap:20px">
+          <div>
+            <div class="card" style="margin-bottom:20px">
+              <div class="card-header">
+                <div class="phase-icon" style="background:rgba(155,126,200,.12)">✏️</div>
+                <h3>Edit Agent</h3>
+                <span class="chip chip-purple" style="font-size:11px">LangGraph powered</span>
+              </div>
+              <div class="card-body">
+                <div class="edit-section">
+                  <div class="prompt-label">Describe your edit in natural language</div>
+                  <div class="edit-input-wrap">
+                    <input type="text" class="edit-input" id="editInput" placeholder='e.g. "Make scene 2 darker" or "Change voice tone for Jack to whispered"' onkeydown="if(event.key==='Enter')submitEdit()">
+                    <button class="edit-send" onclick="submitEdit()">→</button>
+                  </div>
+                  <div class="edit-examples">
+                    <span class="edit-chip" onclick="useEditChip(this)">Change voice tone</span>
+                    <span class="edit-chip" onclick="useEditChip(this)">Make scene darker</span>
+                    <span class="edit-chip" onclick="useEditChip(this)">Add background music to scene 3</span>
+                    <span class="edit-chip" onclick="useEditChip(this)">Remove subtitles</span>
+                    <span class="edit-chip" onclick="useEditChip(this)">Speed up scene 1</span>
+                    <span class="edit-chip" onclick="useEditChip(this)">Regenerate character design for Jack</span>
+                    <span class="edit-chip" onclick="useEditChip(this)">Regenerate the script</span>
+                  </div>
+                </div>
+
+                <!-- Detected intent preview -->
+                <div id="intentPreview" class="intent-box" style="display:none">
+                  <div class="intent-row"><span class="intent-key">intent</span><span class="intent-val" id="intentVal">change_voice_tone</span></div>
+                  <div class="intent-row"><span class="intent-key">target</span><span class="intent-val" id="targetVal">audio</span></div>
+                  <div class="intent-row"><span class="intent-key">scope</span><span class="intent-val" id="scopeVal">character:JACK</span></div>
+                  <div class="intent-row"><span class="intent-key">parameters</span><span class="intent-val" id="paramVal">{ "tone": "whispered" }</span></div>
+                </div>
+
+                <div class="divider"></div>
+
+                <!-- Conversation history -->
+                <div class="prompt-label">Edit Conversation</div>
+                <div id="editConversation" style="display:flex;flex-direction:column;gap:10px;min-height:100px">
+                  <div style="color:var(--muted);font-size:13px;text-align:center;padding:24px 0">No edits yet. Describe a change above to get started.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Version history sidebar -->
+          <div>
+            <div class="card">
+              <div class="card-header"><h3>Version History</h3><button class="btn btn-ghost btn-sm">⬇ Export</button></div>
+              <div class="card-body">
+                <div class="version-list" id="versionList">
+                  <div class="version-item current">
+                    <div class="version-num">v2</div>
+                    <div class="version-info">
+                      <div class="v-title">Current Version</div>
+                      <div class="v-meta">Phase 3 complete · 09:14</div>
+                    </div>
+                    <div class="version-actions">
+                      <span class="chip chip-green">Active</span>
+                    </div>
+                  </div>
+                  <div class="version-item">
+                    <div class="version-num">v1</div>
+                    <div class="version-info">
+                      <div class="v-title">Initial Pipeline Run</div>
+                      <div class="v-meta">Phase 2 only · 09:10</div>
+                    </div>
+                    <div class="version-actions">
+                      <button class="btn btn-secondary btn-sm" onclick="revertVersion(1)">↩ Revert</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="divider"></div>
+                <div class="text-sm text-muted">Each edit creates a new snapshot. Revert restores all assets and JSON state.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ VERSION HISTORY ══════════════════════════════ -->
+      <div id="page-history" class="page">
+        <div class="card">
+          <div class="card-header"><h3>Full Version History</h3></div>
+          <div class="card-body">
+            <div class="version-list">
+              <div class="version-item current">
+                <div class="version-num">v2</div>
+                <div class="version-info">
+                  <div class="v-title">Current — Phase 3 complete</div>
+                  <div class="v-meta">Today 09:14 · final_output.mp4 · 4m 12s</div>
+                </div>
+                <div class="version-actions"><span class="chip chip-green">Active</span></div>
+              </div>
+              <div class="version-item">
+                <div class="version-num">v1</div>
+                <div class="version-info">
+                  <div class="v-title">Phase 2 Audio — run_01</div>
+                  <div class="v-meta">Today 09:10 · master_audio_track.mp3 · 4m 12s</div>
+                </div>
+                <div class="version-actions"><button class="btn btn-secondary btn-sm" onclick="revertVersion(1)">↩ Revert</button></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ OUTPUT FILES ══════════════════════════════════ -->
+      <div id="page-outputs" class="page">
+        <div class="card">
+          <div class="card-header"><h3>Generated Output Files</h3><button class="btn btn-secondary btn-sm">⬇ Download All</button></div>
+          <div class="card-body">
+            <div class="prompt-label" style="margin-bottom:12px">Phase 2 — run_02</div>
+            <div class="output-grid" style="margin-bottom:20px">
+              <div class="output-file"><span class="file-icon">🎵</span><span class="file-name">master_audio_track.mp3</span><span class="file-size">8.4 MB</span></div>
+              <div class="output-file"><span class="file-icon">📄</span><span class="file-name">timing_manifest.json</span><span class="file-size">12 KB</span></div>
+              <div class="output-file"><span class="file-icon">📄</span><span class="file-name">bgm_metadata.json</span><span class="file-size">3.2 KB</span></div>
+              <div class="output-file"><span class="file-icon">📄</span><span class="file-name">phase2_summary.json</span><span class="file-size">1.8 KB</span></div>
+              <div class="output-file"><span class="file-icon">🎵</span><span class="file-name">scene01/JACK_line001.mp3</span><span class="file-size">180 KB</span></div>
+              <div class="output-file"><span class="file-icon">🎵</span><span class="file-name">scene01/RACHEL_line002.mp3</span><span class="file-size">210 KB</span></div>
+            </div>
+            <div class="divider"></div>
+            <div class="prompt-label" style="margin-bottom:12px">Phase 3 — run_02</div>
+            <div class="output-grid">
+              <div class="output-file" onclick="navigate('phase3')"><span class="file-icon">🎬</span><span class="file-name">final_output.mp4</span><span class="file-size">42 MB</span></div>
+              <div class="output-file"><span class="file-icon">📄</span><span class="file-name">phase3_output.json</span><span class="file-size">6.1 KB</span></div>
+              <div class="output-file"><span class="file-icon">📄</span><span class="file-name">phase3_video_handoff.json</span><span class="file-size">4.4 KB</span></div>
+              <div class="output-file"><span class="file-icon">🖼️</span><span class="file-name">images/scene_1_line_0.png</span><span class="file-size">640 KB</span></div>
+              <div class="output-file"><span class="file-icon">🎥</span><span class="file-name">clips/scene_1_line_0.mp4</span><span class="file-size">3.2 MB</span></div>
+              <div class="output-file"><span class="file-icon">🎥</span><span class="file-name">clips/scene_1_line_1.mp4</span><span class="file-size">2.9 MB</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ SETTINGS ══════════════════════════════════════ -->
+      <div id="page-settings" class="page">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+          <div class="card">
+            <div class="card-header"><h3>API Keys</h3></div>
+            <div class="card-body">
+              <div class="form-group"><label class="form-label">Freesound API Key</label><input class="form-input" type="password" placeholder="Your Freesound API key"><div class="form-hint">Required for scene-mood BGM search</div></div>
+              <div class="form-group"><label class="form-label">Groq API Key</label><input class="form-input" type="password" placeholder="Your Groq API key"><div class="form-hint">Used for LLM mood analysis (optional)</div></div>
+              <div class="form-group"><label class="form-label">HuggingFace API Token</label><input class="form-input" type="password" placeholder="hf_..."><div class="form-hint">Required for FLUX.1-schnell image generation</div></div>
+              <div class="form-group"><label class="form-label">Claude API Key</label><input class="form-input" type="password" placeholder="sk-ant-..."><div class="form-hint">Used for Phase 1 story generation</div></div>
+              <button class="btn btn-primary">Save API Keys</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h3>Pipeline Defaults</h3></div>
+            <div class="card-body">
+              <div class="form-group"><label class="form-label">Default Phase 1 Model</label><select class="form-input"><option>claude-sonnet-4-6</option><option>gpt-4</option><option>llama3 (local)</option></select></div>
+              <div class="form-group"><label class="form-label">Default Scene Count</label><select class="form-input"><option>3</option><option selected>4</option><option>5</option></select></div>
+              <div class="form-group"><label class="form-label">Output Directory</label><input class="form-input" value="data/outputs/"></div>
+              <div class="form-group"><label class="form-label">Phase 2 Output Dir</label><input class="form-input" value="data/outputs/Phase2/"></div>
+              <div class="form-group"><label class="form-label">Phase 3 Output Dir</label><input class="form-input" value="data/outputs/Phase3/"></div>
+              <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px">
+                <div class="toggle-wrap"><button class="toggle on" onclick="toggleBtn(this)"></button><span class="text-sm">Enable BGM by default</span></div>
+                <div class="toggle-wrap"><button class="toggle on" onclick="toggleBtn(this)"></button><span class="text-sm">Enable subtitles by default</span></div>
+                <div class="toggle-wrap"><button class="toggle" onclick="toggleBtn(this)"></button><span class="text-sm">Mock mode (no API calls)</span></div>
+              </div>
+              <button class="btn btn-primary">Save Settings</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ── TOAST AREA ────────────────────────────────────────── -->
+<div class="toast-area" id="toastArea"></div>
+
+<!-- ── RE-RUN MODAL ──────────────────────────────────────── -->
+<div class="modal-backdrop" id="rerunModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="rerunTitle">Re-run Phase 2</h3>
+      <button class="btn btn-ghost btn-icon" onclick="closeModal('rerunModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="text-sm text-muted" style="margin-bottom:16px" id="rerunDesc">Select which sub-steps to re-run for Phase 2.</p>
+      <div id="rerunOptions" style="display:flex;flex-direction:column;gap:10px">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('rerunModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmRerun()">↻ Re-run Selected</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── NAVIGATION ────────────────────────────────────────────
+  const pageTitles = {
+    dashboard: 'Dashboard',
+    generate: 'New Video',
+    phase1: 'Phase 1 — Story & Script',
+    phase2: 'Phase 2 — Audio Generation',
+    phase3: 'Phase 3 — Video Generation',
+    edit: 'Edit Agent',
+    history: 'Version History',
+    outputs: 'Output Files',
+    settings: 'Settings'
+  };
+
+  function navigate(id) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    const page = document.getElementById('page-' + id);
+    if (page) page.classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(n => {
+      if (n.getAttribute('onclick') && n.getAttribute('onclick').includes("'" + id + "'")) n.classList.add('active');
+    });
+    document.getElementById('pageTitle').textContent = pageTitles[id] || id;
+  }
+
+  // ── TABS ──────────────────────────────────────────────────
+  function switchTab(prefix, id) {
+    const tabs = document.querySelectorAll(`#page-${prefix} .tab`);
+    const contents = document.querySelectorAll(`[id^="${prefix}-"]`);
+    contents.forEach(c => c.classList.remove('active'));
+    tabs.forEach(t => t.classList.remove('active'));
+    const target = document.getElementById(`${prefix}-${id}`);
+    if (target) target.classList.add('active');
+    // Activate tab button
+    const all = document.querySelectorAll(`#page-${prefix === 'p2' ? 'phase2' : 'phase3'} .tab`);
+    all.forEach(t => { if (t.getAttribute('onclick') && t.getAttribute('onclick').includes(`'${id}'`)) t.classList.add('active'); });
+  }
+
+  // ── GENERATION ────────────────────────────────────────────
+  let genInterval = null;
+  let genPhase = 0;
+  let genPct = 0;
+
+  const phases = [
+    { label: 'Phase 1 — Generating story & script...', color: 'var(--phase1)' },
+    { label: 'Phase 2 — Synthesizing audio & BGM...', color: 'var(--phase2)' },
+    { label: 'Phase 3 — Generating images & compositing video...', color: 'var(--phase3)' },
+  ];
+  const fakeLogs = [
+    ['info','Loading prompt...'],
+    ['info','Phase 1: Calling LLM — generating narrative...'],
+    ['success','✓ Story generated: 4 scenes, 3 characters'],
+    ['info','Phase 2: Edge-TTS synthesis starting...'],
+    ['info','Synthesizing JACK (en-US-GuyNeural)...'],
+    ['info','Searching Freesound: "dark synth ambient"...'],
+    ['success','✓ 17 dialogue files generated'],
+    ['info','Phase 3: FLUX.1-schnell image generation...'],
+    ['info','Generating image 1/12 — scene 1 JACK...'],
+    ['info','Generating image 4/12 — scene 2 VLADIMIR...'],
+    ['info','Running Ken Burns animation...'],
+    ['info','Compositing final video with MoviePy...'],
+    ['success','✓ final_output.mp4 saved!'],
+  ];
+
+  function startGeneration() {
+    const prompt = document.getElementById('promptInput').value.trim();
+    if (!prompt) { showToast('Please enter a story prompt', 'error'); return; }
+    const btn = document.getElementById('generateBtn');
+    btn.disabled = true;
+    document.getElementById('genBtnInner').innerHTML = '<div class="spinner"></div> &nbsp;Running...';
+    document.getElementById('genProgressCard').style.display = '';
+    document.getElementById('genStatus').textContent = 'Pipeline started...';
+    genPhase = 0; genPct = 0;
+    const liveLog = document.getElementById('liveLog');
+    liveLog.innerHTML = '';
+    let logIdx = 0;
+    genInterval = setInterval(() => {
+      genPct += 2 + Math.random() * 3;
+      if (genPct > 100) genPct = 100;
+      const phaseIdx = genPct < 33 ? 0 : genPct < 66 ? 1 : 2;
+      document.getElementById('currentPhaseLabel').textContent = phases[phaseIdx].label;
+      document.getElementById('currentPct').textContent = Math.round(genPct) + '%';
+      document.getElementById('liveBar').style.width = genPct + '%';
+      document.getElementById('liveBar').style.background = phases[phaseIdx].color;
+      if (logIdx < fakeLogs.length && Math.random() > 0.5) {
+        const [type, msg] = fakeLogs[logIdx++];
+        addLogLine(liveLog, type, msg);
+      }
+      if (genPct >= 100) {
+        clearInterval(genInterval);
+        btn.disabled = false;
+        document.getElementById('genBtnInner').innerHTML = '▶ &nbsp;Start Full Pipeline';
+        document.getElementById('genStatus').textContent = '';
+        showToast('Pipeline complete! Video ready.', 'success');
+        updateNavBadge('phase2', 'done');
+        updateNavBadge('phase3', 'done');
+        setTimeout(() => navigate('phase3'), 1400);
+      }
+    }, 400);
+  }
+
+  function cancelGeneration() {
+    if (genInterval) clearInterval(genInterval);
+    document.getElementById('generateBtn').disabled = false;
+    document.getElementById('genBtnInner').innerHTML = '▶ &nbsp;Start Full Pipeline';
+    document.getElementById('genProgressCard').style.display = 'none';
+    showToast('Pipeline cancelled', 'info');
+  }
+
+  function addLogLine(container, type, msg) {
+    const line = document.createElement('div');
+    line.className = 'log-line';
+    const now = new Date();
+    const t = now.toTimeString().slice(0,8);
+    line.innerHTML = `<span class="log-time">${t}</span><span class="log-${type}">${msg}</span>`;
+    container.appendChild(line);
+    container.scrollTop = container.scrollHeight;
+  }
+
+  function clearLog() {
+    document.getElementById('mainLog').innerHTML = '<div class="log-line"><span class="log-time">--:--:--</span><span class="log-info">Log cleared.</span></div>';
+  }
+
+  // ── EDIT AGENT ────────────────────────────────────────────
+  const intentMap = {
+    'change voice tone': { intent:'change_voice_tone', target:'audio', scope:'character:JACK', params:'{"tone":"whispered"}' },
+    'make scene darker': { intent:'adjust_visual_style', target:'video_frame', scope:'scene:2', params:'{"aesthetic":"darker,-0.1 brightness"}' },
+    'remove subtitles': { intent:'remove_subtitles', target:'video', scope:'full', params:'{}' },
+    'speed up scene 1': { intent:'adjust_timing', target:'video', scope:'scene:1', params:'{"speed_factor":1.5}' },
+    'add background music': { intent:'add_bgm', target:'audio', scope:'scene:3', params:'{"mood":"ambient calm"}' },
+    'regenerate the script': { intent:'regenerate_script', target:'script', scope:'full', params:'{}' },
+    'regenerate character design for jack': { intent:'regenerate_character', target:'video_frame', scope:'character:JACK', params:'{}' },
+  };
+
+  function submitEdit() {
+    const input = document.getElementById('editInput');
+    const text = input.value.trim();
+    if (!text) return;
+    const key = text.toLowerCase();
+    const intent = Object.entries(intentMap).find(([k]) => key.includes(k));
+    const detected = intent ? intent[1] : { intent:'custom_edit', target:'video', scope:'full', params:`{"query":"${text}"}` };
+
+    // Show intent box
+    document.getElementById('intentPreview').style.display = '';
+    document.getElementById('intentVal').textContent = detected.intent;
+    document.getElementById('targetVal').textContent = detected.target;
+    document.getElementById('scopeVal').textContent = detected.scope;
+    document.getElementById('paramVal').textContent = detected.params;
+
+    // Add to conversation
+    const conv = document.getElementById('editConversation');
+    if (conv.querySelector('.text-muted') && conv.querySelectorAll('.log-line').length === 0) conv.innerHTML = '';
+    const bubble = document.createElement('div');
+    bubble.style.cssText = 'display:flex;flex-direction:column;gap:8px';
+    bubble.innerHTML = `
+      <div style="align-self:flex-end;background:var(--accent);color:white;padding:9px 14px;border-radius:12px 12px 2px 12px;font-size:13.5px;max-width:80%">${text}</div>
+      <div style="align-self:flex-start;background:rgba(155,126,200,.08);border:1px solid rgba(155,126,200,.2);padding:9px 14px;border-radius:2px 12px 12px 12px;font-size:13px;max-width:85%">
+        <strong style="color:var(--phase5)">Edit Agent:</strong> Intent classified as <code style="background:rgba(155,126,200,.12);padding:1px 5px;border-radius:3px">${detected.intent}</code> targeting <code style="background:rgba(155,126,200,.12);padding:1px 5px;border-radius:3px">${detected.target}</code>.<br>
+        <span style="color:var(--muted);font-size:12px;margin-top:4px;display:block">Re-running affected pipeline steps... (connect backend to execute)</span>
+      </div>`;
+    conv.appendChild(bubble);
+    conv.scrollTop = conv.scrollHeight;
+
+    // Add to version history
+    addVersion(text.slice(0, 32) + '...');
+    input.value = '';
+    showToast('Edit classified — ready to execute', 'info');
+  }
+
+  function useEditChip(el) {
+    document.getElementById('editInput').value = el.textContent;
+    document.getElementById('editInput').focus();
+  }
+
+  // ── VERSIONS ──────────────────────────────────────────────
+  let versionCount = 2;
+  function addVersion(desc) {
+    versionCount++;
+    const list = document.getElementById('versionList');
+    const active = list.querySelector('.version-item.current');
+    if (active) active.classList.remove('current');
+    const item = document.createElement('div');
+    item.className = 'version-item current';
+    item.innerHTML = `
+      <div class="version-num">v${versionCount}</div>
+      <div class="version-info"><div class="v-title">${desc}</div><div class="v-meta">Just now</div></div>
+      <div class="version-actions"><span class="chip chip-green">Active</span></div>`;
+    list.insertBefore(item, list.firstChild);
+    // Update old active item
+    if (active) {
+      active.querySelector('.version-actions').innerHTML = `<button class="btn btn-secondary btn-sm" onclick="revertVersion(${versionCount-1})">↩ Revert</button>`;
+    }
+  }
+
+  function revertVersion(v) {
+    showToast(`Reverted to v${v} — assets restored`, 'success');
+  }
+
+  // ── RE-RUN MODAL ──────────────────────────────────────────
+  const rerunOptions = {
+    2: [
+      { id:'tts', label:'Re-run TTS only (voices)', desc:'Regenerate audio files only' },
+      { id:'bgm', label:'Re-run BGM only', desc:'Re-fetch background music' },
+      { id:'compose', label:'Re-compose audio', desc:'Remix voice + BGM' },
+      { id:'full2', label:'Full Phase 2 re-run', desc:'All of the above' },
+    ],
+    3: [
+      { id:'images', label:'Re-generate images only', desc:'New FLUX.1-schnell images' },
+      { id:'animate', label:'Re-animate only', desc:'Re-apply Ken Burns effects' },
+      { id:'compose3', label:'Re-compose video only', desc:'Re-composite with current clips' },
+      { id:'full3', label:'Full Phase 3 re-run', desc:'All of the above' },
+    ]
+  };
+
+  let currentRerunPhase = null;
+  function rerunPhase(phase) {
+    currentRerunPhase = phase;
+    document.getElementById('rerunTitle').textContent = `Re-run Phase ${phase}`;
+    document.getElementById('rerunDesc').textContent = `Select what to re-run for Phase ${phase}:`;
+    const opts = document.getElementById('rerunOptions');
+    opts.innerHTML = rerunOptions[phase].map(o => `
+      <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--warm-white);border:1px solid var(--border);border-radius:var(--r-sm);cursor:pointer">
+        <input type="checkbox" value="${o.id}" style="width:15px;height:15px;accent-color:var(--accent)">
+        <div><div style="font-size:13.5px;font-weight:500">${o.label}</div><div class="text-sm text-muted">${o.desc}</div></div>
+      </label>`).join('');
+    document.getElementById('rerunModal').classList.add('open');
+  }
+
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+  function confirmRerun() {
+    const checked = Array.from(document.querySelectorAll('#rerunOptions input:checked')).map(i => i.value);
+    if (!checked.length) { showToast('Select at least one option', 'error'); return; }
+    closeModal('rerunModal');
+    showToast(`Phase ${currentRerunPhase} re-run started (${checked.join(', ')})`, 'info');
+  }
+
+  // ── TOAST ─────────────────────────────────────────────────
+  function showToast(msg, type = 'info') {
+    const icons = { success:'✅', error:'❌', info:'ℹ️' };
+    const area = document.getElementById('toastArea');
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.innerHTML = `<span>${icons[type]}</span><span>${msg}</span>`;
+    area.appendChild(t);
+    setTimeout(() => t.style.opacity = '0', 3200);
+    setTimeout(() => t.remove(), 3500);
+  }
+
+  // ── MISC HELPERS ──────────────────────────────────────────
+  function usePrompt(el) {
+    document.getElementById('promptInput').value = el.textContent;
+    document.getElementById('promptInput').focus();
+  }
+
+  function toggleBtn(btn) { btn.classList.toggle('on'); }
+
+  function updateNavBadge(phase, status) {
+    const navItem = document.querySelector(`.nav-item[onclick*="${phase}"]`);
+    if (navItem) {
+      const badge = navItem.querySelector('.badge');
+      if (badge) {
+        badge.className = `badge badge-${status === 'done' ? 'done' : status === 'running' ? 'running' : 'pending'}`;
+        badge.textContent = status;
+      }
+    }
+  }
+
+  function downloadManifest() { showToast('Downloading timing_manifest.json...', 'info'); }
+  function openVideoPreview() { navigate('phase3'); switchTab('p3','preview'); }
+  function loadSampleData() { showToast('Sample Phase 1 data loaded from data/outputs/Phase1/', 'success'); }
+  function uploadP1File(e) {
+    const file = e.target.files[0];
+    if (file) showToast(`Uploaded: ${file.name}`, 'success');
+  }
+</script>
+</body>
+</html>
