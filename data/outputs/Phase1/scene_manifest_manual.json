@@ -1,0 +1,49 @@
+{
+  "workflow_id": "workflow_20260502_094649",
+  "timestamp": "2026-05-02T09:47:13.675049",
+  "scenes": [
+    {
+      "scene_id": 1,
+      "location": "Mars Surface",
+      "dialogue": [
+        {
+          "speaker": "Maya Patel",
+          "line": "This is it. My new home.",
+          "visual_cue": "Maya steps out of her spacecraft, looking out at the Martian landscape with a mix of awe and trepidation"
+        },
+        {
+          "speaker": "Mission Control Voice",
+          "line": "Maya, can you hear us? We're reading you loud and clear.",
+          "visual_cue": "Maya touches her comms device, looking up at the sky"
+        }
+      ],
+      "characters": [
+        "Maya Patel",
+        "Mission Control Voice"
+      ],
+      "duration": 30
+    },
+    {
+      "scene_id": 2,
+      "location": "Hidden Ocean",
+      "dialogue": [
+        {
+          "speaker": "Maya Patel",
+          "line": "What is this place?",
+          "visual_cue": "Maya shines her flashlight down into the darkness, revealing the glint of water and ice"
+        },
+        {
+          "speaker": "Dr. Liam Chen",
+          "line": "Maya, we're reading a massive body of water down there. This could be the discovery of a lifetime.",
+          "visual_cue": "Dr. Chen's voice comes through Maya's comms device, as she looks out at the vast expanse of water"
+        }
+      ],
+      "characters": [
+        "Maya Patel",
+        "Dr. Liam Chen"
+      ],
+      "duration": 40
+    }
+  ],
+  "total_scenes": 2
+}

@@ -1,0 +1,56 @@
+{
+  "characters": [
+    {
+      "id": "char_1",
+      "name": "Maya Patel",
+      "traits": [
+        "Maya",
+        "is"
+      ],
+      "appearance": "Maya has short, dark hair and expressive brown eyes. She wears a sleek white and silver spacesuit with a gold badge on her chest, bearing the insignia of the Mars Colonization Mission. Her suit is equipped with a life support system, communication device, and various tools for sampling and exploration.",
+      "reference_style": "Concept art by Syd Mead, with a mix of futuristic and industrial elements",
+      "visual_refs": [
+        "data\\image_assets\\Maya Patel.svg"
+      ]
+    },
+    {
+      "id": "char_2",
+      "name": "Dr. Liam Chen",
+      "traits": [
+        "Dr.",
+        "Chen"
+      ],
+      "appearance": "Dr. Chen has a kind face with a wispy beard and glasses perched on the end of his nose. He wears a simple white lab coat over a blue shirt and khaki pants, with a pocket protector filled with pens and a notebook.",
+      "reference_style": "Inspired by the character designs of Pixar's 'WALL-E'",
+      "visual_refs": [
+        "data\\image_assets\\Dr. Liam Chen.svg"
+      ]
+    },
+    {
+      "id": "char_3",
+      "name": "Mission Control Voice",
+      "traits": [
+        "The",
+        "Mission"
+      ],
+      "appearance": "No visual appearance, only a voice",
+      "reference_style": "Inspired by the Mission Control voices from NASA's Apollo missions",
+      "visual_refs": [
+        "data\\image_assets\\Mission Control Voice.svg"
+      ]
+    },
+    {
+      "id": "char_4",
+      "name": "Ava Morales",
+      "traits": [
+        "Ava",
+        "is"
+      ],
+      "appearance": "Ava has curly brown hair and a bright smile, with a few tattoos on her arms and a scar above her left eyebrow. She wears a pair of goggles on her forehead and a tool belt around her waist, with a Mars Colonization Mission patch on her sleeve.",
+      "reference_style": "Inspired by the character designs of 'The Martian'",
+      "visual_refs": [
+        "data\\image_assets\\Ava Morales.svg"
+      ]
+    }
+  ]
+}

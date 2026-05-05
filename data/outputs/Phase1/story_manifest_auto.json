@@ -1,0 +1,42 @@
+{
+  "workflow_id": "workflow_20260502_094649",
+  "timestamp": "2026-05-02T09:47:13.675049",
+  "story": {
+    "title": "Red Planet Tides",
+    "logline": "A young astronaut's discovery of a hidden ocean on Mars sparks a desperate quest to unlock its secrets before the planet's harsh environment claims them.",
+    "genre": "Science Fiction",
+    "tone": "Thrilling and contemplative",
+    "setting": "Mars",
+    "time_period": "Near future",
+    "themes": [
+      "Discovery",
+      "Resilience",
+      "Wonder"
+    ],
+    "acts": [
+      {
+        "act": 1,
+        "label": "Introduction",
+        "description": "Astronaut Maya Patel arrives on Mars, eager to contribute to the planet's fledgling human settlement, but soon finds herself at odds with the harsh environment and her own expectations."
+      },
+      {
+        "act": 2,
+        "label": "Conflict",
+        "description": "While on a routine excursion, Maya stumbles upon a hidden ocean, which sparks a sense of wonder and trepidation as she navigates the implications of this groundbreaking discovery."
+      },
+      {
+        "act": 3,
+        "label": "Climax",
+        "description": "As Maya delves deeper into the ocean's secrets, she must confront the extreme conditions and her own limitations, leading to a heart-pumping, action-packed sequence that tests her resolve and ingenuity."
+      },
+      {
+        "act": 4,
+        "label": "Resolution",
+        "description": "Maya emerges from her ordeal with a newfound appreciation for the planet and its mysteries, and a determination to share her discovery with the world, potentially changing the course of human history on Mars."
+      }
+    ],
+    "protagonist": "Maya Patel",
+    "antagonist": "The harsh Martian environment",
+    "world": "The story takes place in a near-future vision of Mars, where humanity has established a fragile foothold amidst the planet's unforgiving landscape. The Martian environment is a character in its own right, with its rust-red hues, towering dust storms, and mysterious, ancient secrets waiting to be uncovered."
+  }
+}

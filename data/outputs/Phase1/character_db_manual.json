@@ -1,0 +1,29 @@
+{
+  "workflow_id": "workflow_20260502_094649",
+  "timestamp": "2026-05-02T09:47:13.675049",
+  "characters": [
+    {
+      "name": "Maya Patel",
+      "personality": "Maya is a determined and resourceful young astronaut with a passion for discovery. She is driven by a sense of wonder and a desire to contribute to the advancement of human knowledge. Despite her tough exterior, she has a compassionate and introspective side.",
+      "appearance": "Maya has short, dark hair and expressive brown eyes. She wears a sleek white and silver spacesuit with a gold badge on her chest, bearing the insignia of the Mars Colonization Mission. Her suit is equipped with a life support system, communication device, and various tools for sampling and exploration.",
+      "style_reference": "Concept art by Syd Mead, with a mix of futuristic and industrial elements",
+      "first_appearance": 1,
+      "dialogue_samples": [
+        "I've never seen anything like this before. It's as if the planet is hiding secrets beneath its surface.",
+        "We have to be careful. The terrain is treacherous, and we don't know what kind of risks we're facing."
+      ]
+    },
+    {
+      "name": "Dr. Liam Chen",
+      "personality": "Dr. Chen is a seasoned scientist and mentor to Maya, with a warm and authoritative demeanor. He is a brilliant mind with a dry sense of humor, often providing a voice of reason in times of uncertainty. Despite his age, he has a youthful energy and a passion for discovery.",
+      "appearance": "Dr. Chen has a kind face with a wispy beard and glasses perched on the end of his nose. He wears a simple white lab coat over a blue shirt and khaki pants, with a pocket protector filled with pens and a notebook.",
+      "style_reference": "Inspired by the character designs of Pixar's 'WALL-E'",
+      "first_appearance": 1,
+      "dialogue_samples": [
+        "Maya, you're pushing the boundaries of what we thought was possible. Keep going, but stay safe.",
+        "The data is telling us something incredible. Let's take a closer look."
+      ]
+    }
+  ],
+  "total_characters": 2
+}

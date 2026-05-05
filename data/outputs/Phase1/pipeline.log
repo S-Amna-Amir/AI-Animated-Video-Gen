@@ -1,0 +1,83 @@
+2026-05-01 16:36:23,341 | INFO | AgenticAI.Phase1 | StoryAgent.run: starting | workflow_id=workflow_20260501_163623
+2026-05-01 16:36:23,346 | INFO | AgenticAI.Phase1 | story_node: generating story arc | prompt=A young astronaut discovers a hidden ocean on Mars
+2026-05-01 16:36:23,594 | INFO | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2026-05-01 16:36:23,595 | ERROR | AgenticAI.Phase1 | story_node failed: Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01kq5s424xe77s0s4m3x7rtbx3` service tier `on_demand` on tokens per day (TPD): Limit 100000, Used 99755, Requested 9058. Please try again in 2h6m54.432s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}
+2026-05-01 16:36:23,597 | INFO | AgenticAI.Phase1 | character_node: designing characters
+2026-05-01 16:36:23,597 | ERROR | AgenticAI.Phase1 | character_node failed: 'NoneType' object is not subscriptable
+2026-05-01 16:36:23,598 | INFO | AgenticAI.Phase1 | script_node: writing scene-by-scene script
+2026-05-01 16:36:23,598 | INFO | AgenticAI.Phase1 | validate_node: checking consistency
+2026-05-02 09:02:42,741 | INFO | AgenticAI.Phase1 | StoryAgent.run: starting | workflow_id=workflow_20260502_090242
+2026-05-02 09:02:42,751 | INFO | AgenticAI.Phase1 | story_node: generating story arc | prompt=A young astronaut discovers a hidden ocean on Mars
+2026-05-02 09:02:44,975 | INFO | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-05-02 09:02:44,994 | INFO | AgenticAI.Phase1 | story_node: success | title=RedPlanet Depths
+2026-05-02 09:02:44,995 | INFO | AgenticAI.Phase1 | character_node: designing characters
+2026-05-02 09:02:45,268 | INFO | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2026-05-02 09:02:45,269 | INFO | groq._base_client | Retrying request to /openai/v1/chat/completions in 9.000000 seconds
+2026-05-02 09:02:56,932 | INFO | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-05-02 09:02:56,934 | INFO | AgenticAI.Phase1 | character_node: 4 characters created
+2026-05-02 09:02:56,936 | INFO | AgenticAI.Phase1 | script_node: writing scene-by-scene script
+2026-05-02 09:03:00,758 | INFO | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-05-02 09:03:00,763 | INFO | AgenticAI.Phase1 | script_node: 4 scenes written
+2026-05-02 09:03:00,765 | INFO | AgenticAI.Phase1 | validate_node: checking consistency
+2026-05-02 09:03:00,846 | INFO | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2026-05-02 09:03:00,847 | INFO | groq._base_client | Retrying request to /openai/v1/chat/completions in 13.000000 seconds
+2026-05-02 09:03:14,405 | INFO | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-05-02 09:03:14,408 | INFO | AgenticAI.Phase1 | validate_node: done | is_valid=False
+2026-05-02 09:03:14,428 | INFO | AgenticAI.Phase1 | Phase1-format artefacts saved | path=data\outputs\Phase1
+2026-05-02 09:03:14,436 | INFO | AgenticAI.Phase1 | Artefacts saved | path=data\outputs\Phase1
+2026-05-02 09:03:14,437 | INFO | AgenticAI.Phase1 | StoryAgent.run: complete | workflow_id=workflow_20260502_090242
+2026-05-02 09:43:30,223 | INFO | AgenticAI.Phase1 | StoryAgent.run: starting | workflow_id=workflow_20260502_094330
+2026-05-02 09:43:30,229 | INFO | AgenticAI.Phase1 | story_node: generating story arc | prompt=A young astronaut discovers a hidden ocean on Mars
+2026-05-02 09:43:31,731 | INFO | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-05-02 09:43:31,743 | INFO | AgenticAI.Phase1 | story_node: success | title=Red Planet Tides
+2026-05-02 09:43:31,744 | INFO | AgenticAI.Phase1 | character_node: designing characters
+2026-05-02 09:43:31,925 | INFO | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2026-05-02 09:43:31,926 | INFO | groq._base_client | Retrying request to /openai/v1/chat/completions in 10.000000 seconds
+2026-05-02 09:43:43,725 | INFO | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-05-02 09:43:43,728 | INFO | AgenticAI.Phase1 | character_node: 3 characters created
+2026-05-02 09:43:43,730 | INFO | AgenticAI.Phase1 | script_node: writing scene-by-scene script
+2026-05-02 09:43:43,810 | INFO | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2026-05-02 09:43:43,811 | INFO | groq._base_client | Retrying request to /openai/v1/chat/completions in 6.000000 seconds
+2026-05-02 09:43:49,972 | INFO | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2026-05-02 09:43:49,973 | INFO | groq._base_client | Retrying request to /openai/v1/chat/completions in 1.000000 seconds
+2026-05-02 09:43:54,472 | INFO | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-05-02 09:43:54,475 | INFO | AgenticAI.Phase1 | script_node: 4 scenes written
+2026-05-02 09:43:54,476 | INFO | AgenticAI.Phase1 | validate_node: checking consistency
+2026-05-02 09:43:54,552 | INFO | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2026-05-02 09:43:54,553 | INFO | groq._base_client | Retrying request to /openai/v1/chat/completions in 10.000000 seconds
+2026-05-02 09:44:05,313 | INFO | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-05-02 09:44:05,315 | INFO | AgenticAI.Phase1 | validate_node advisory: Character 'Mission Control' referenced in scenes but not defined in character roster
+2026-05-02 09:44:05,316 | INFO | AgenticAI.Phase1 | validate_node advisory: Scene mood 'tense' and tone 'thrilling' are consistent with genre, but may not fully align with overall tone 'Thrilling and contemplative'
+2026-05-02 09:44:05,316 | INFO | AgenticAI.Phase1 | validate_node advisory: Visual prompts in scenes may be missing key elements, such as descriptions of the Martian landscape beyond 'vast, barren landscape with towering mountains in the distance'
+2026-05-02 09:44:05,317 | INFO | AgenticAI.Phase1 | validate_node: done | is_valid=True error_count=0 warning_count=3
+2026-05-02 09:44:05,325 | INFO | AgenticAI.Phase1 | Phase1-format artefacts saved | path=data\outputs\Phase1
+2026-05-02 09:44:05,330 | INFO | AgenticAI.Phase1 | Artefacts saved | path=data\outputs\Phase1
+2026-05-02 09:44:05,330 | INFO | AgenticAI.Phase1 | StoryAgent.run: complete | workflow_id=workflow_20260502_094330
+2026-05-02 09:46:49,563 | INFO | AgenticAI.Phase1 | StoryAgent.run: starting | workflow_id=workflow_20260502_094649
+2026-05-02 09:46:49,569 | INFO | AgenticAI.Phase1 | story_node: generating story arc | prompt=A young astronaut discovers a hidden ocean on Mars
+2026-05-02 09:46:51,173 | INFO | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-05-02 09:46:52,486 | INFO | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-05-02 09:46:52,488 | INFO | AgenticAI.Phase1 | story_node: success | title=Red Planet Tides
+2026-05-02 09:46:52,490 | INFO | AgenticAI.Phase1 | character_node: designing characters
+2026-05-02 09:46:55,348 | INFO | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-05-02 09:46:55,349 | INFO | AgenticAI.Phase1 | character_node: 4 characters created
+2026-05-02 09:46:55,349 | INFO | AgenticAI.Phase1 | script_node: writing scene-by-scene script
+2026-05-02 09:46:55,436 | INFO | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2026-05-02 09:46:55,437 | INFO | groq._base_client | Retrying request to /openai/v1/chat/completions in 2.000000 seconds
+2026-05-02 09:46:57,515 | INFO | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2026-05-02 09:46:57,517 | INFO | groq._base_client | Retrying request to /openai/v1/chat/completions in 3.000000 seconds
+2026-05-02 09:47:04,908 | INFO | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-05-02 09:47:04,911 | INFO | AgenticAI.Phase1 | script_node: 4 scenes written
+2026-05-02 09:47:04,913 | INFO | AgenticAI.Phase1 | validate_node: checking consistency
+2026-05-02 09:47:04,991 | INFO | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2026-05-02 09:47:04,993 | INFO | groq._base_client | Retrying request to /openai/v1/chat/completions in 6.000000 seconds
+2026-05-02 09:47:11,150 | INFO | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2026-05-02 09:47:11,151 | INFO | groq._base_client | Retrying request to /openai/v1/chat/completions in 2.000000 seconds
+2026-05-02 09:47:13,668 | INFO | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-05-02 09:47:13,670 | INFO | AgenticAI.Phase1 | validate_node advisory: Character 'Mission Control Voice' referenced in scene 1 but not defined in character roster
+2026-05-02 09:47:13,670 | INFO | AgenticAI.Phase1 | validate_node advisory: Scene 1 mood 'tense' and tone 'contemplative' may be inconsistent with overall tone 'Thrilling and contemplative', consider adding more thrilling elements
+2026-05-02 09:47:13,671 | INFO | AgenticAI.Phase1 | validate_node advisory: Visual prompt for Maya Patel's line in scene 1 is missing key scene element 'spacesuit' described in character appearance
+2026-05-02 09:47:13,672 | INFO | AgenticAI.Phase1 | validate_node: done | is_valid=True error_count=0 warning_count=3
+2026-05-02 09:47:13,683 | INFO | AgenticAI.Phase1 | Phase1-format artefacts saved | path=data\outputs\Phase1
+2026-05-02 09:47:13,697 | INFO | AgenticAI.Phase1 | Artefacts saved | path=data\outputs\Phase1
+2026-05-02 09:47:13,697 | INFO | AgenticAI.Phase1 | StoryAgent.run: complete | workflow_id=workflow_20260502_094649

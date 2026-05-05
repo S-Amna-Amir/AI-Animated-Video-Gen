@@ -1,0 +1,128 @@
+{
+  "workflow_id": "workflow_20260502_094649",
+  "timestamp": "2026-05-02T09:47:13.675049",
+  "scenes": [
+    {
+      "scene_id": 1,
+      "location": "Mars Surface",
+      "mood": "tense",
+      "visual": {
+        "image_prompt": "A young female astronaut in a sleek white spacesuit stands at the edge of a massive dust storm on Mars, with a spacecraft in the background and a vast, barren landscape stretching out to the horizon, under a warm golden hour light with long shadows and a sense of depth",
+        "camera_angle": "medium shot",
+        "lighting": "warm golden hour",
+        "color_palette": "warm amber tones",
+        "transition_in": "fade",
+        "transition_out": "cut"
+      },
+      "dialogue": [
+        {
+          "speaker": "Maya Patel",
+          "line": "This is it. My new home.",
+          "visual_cue": "Maya steps out of her spacecraft, looking out at the Martian landscape with a mix of awe and trepidation"
+        },
+        {
+          "speaker": "Mission Control Voice",
+          "line": "Maya, can you hear us? We're reading you loud and clear.",
+          "visual_cue": "Maya touches her comms device, looking up at the sky"
+        }
+      ],
+      "characters": [
+        "Maya Patel",
+        "Mission Control Voice"
+      ],
+      "duration": 30
+    },
+    {
+      "scene_id": 2,
+      "location": "Hidden Ocean",
+      "mood": "mysterious",
+      "visual": {
+        "image_prompt": "A young female astronaut in a sleek white spacesuit stands at the edge of a massive underground ocean on Mars, with a vast expanse of dark water and glittering ice stretching out before her, illuminated by the faint glow of bioluminescent creatures and the beam of her flashlight",
+        "camera_angle": "low angle",
+        "lighting": "cool blue",
+        "color_palette": "deep blues and purples",
+        "transition_in": "dissolve",
+        "transition_out": "fade"
+      },
+      "dialogue": [
+        {
+          "speaker": "Maya Patel",
+          "line": "What is this place?",
+          "visual_cue": "Maya shines her flashlight down into the darkness, revealing the glint of water and ice"
+        },
+        {
+          "speaker": "Dr. Liam Chen",
+          "line": "Maya, we're reading a massive body of water down there. This could be the discovery of a lifetime.",
+          "visual_cue": "Dr. Chen's voice comes through Maya's comms device, as she looks out at the vast expanse of water"
+        }
+      ],
+      "characters": [
+        "Maya Patel",
+        "Dr. Liam Chen"
+      ],
+      "duration": 40
+    },
+    {
+      "scene_id": 3,
+      "location": "Ocean Floor",
+      "mood": "action",
+      "visual": {
+        "image_prompt": "A sleek white submersible plunges through the turbulent waters of the Martian ocean, with massive waves and treacherous underwater currents threatening to crush it, as the pilot's face is set in determination and the controls are a blur of frantic activity",
+        "camera_angle": "point of view",
+        "lighting": "high contrast",
+        "color_palette": "dark blues and greys",
+        "transition_in": "cut",
+        "transition_out": "dissolve"
+      },
+      "dialogue": [
+        {
+          "speaker": "Maya Patel",
+          "line": "Ava, I need you to hack into the submersible's systems and override the safety protocols!",
+          "visual_cue": "Maya frantically works the controls of the submersible, as Ava's voice comes through the comms device"
+        },
+        {
+          "speaker": "Ava Morales",
+          "line": "Maya, I'm trying, but the system is not responding!",
+          "visual_cue": "Ava's voice is laced with urgency, as Maya's face sets in determination"
+        }
+      ],
+      "characters": [
+        "Maya Patel",
+        "Ava Morales"
+      ],
+      "duration": 50
+    },
+    {
+      "scene_id": 4,
+      "location": "Mars Surface",
+      "mood": "peaceful",
+      "visual": {
+        "image_prompt": "A young female astronaut in a sleek white spacesuit stands at the edge of the Martian landscape, looking out at the sunrise over the vast, barren expanse, with a sense of peace and contemplation, under a warm golden hour light with long shadows and a sense of depth",
+        "camera_angle": "wide shot",
+        "lighting": "warm golden hour",
+        "color_palette": "warm amber tones",
+        "transition_in": "fade",
+        "transition_out": "fade to black"
+      },
+      "dialogue": [
+        {
+          "speaker": "Maya Patel",
+          "line": "We did it. We found something incredible.",
+          "visual_cue": "Maya stands at the edge of the Martian landscape, looking out at the sunrise"
+        },
+        {
+          "speaker": "Dr. Liam Chen",
+          "line": "Maya, your discovery is going to change the course of human history on Mars.",
+          "visual_cue": "Dr. Chen's voice comes through Maya's comms device, as she smiles, looking out at the landscape"
+        }
+      ],
+      "characters": [
+        "Maya Patel",
+        "Dr. Liam Chen"
+      ],
+      "duration": 60
+    }
+  ],
+  "total_scenes": 4,
+  "total_duration_seconds": 180
+}
