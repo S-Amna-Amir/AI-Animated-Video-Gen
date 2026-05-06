@@ -94,12 +94,35 @@ Output ONLY valid JSON.
             return self._fallback_classify(query)
 
     def _fallback_classify(self, query: str) -> dict[str, Any]:
-        return {
-            "intent": "custom_edit",
-            "target": "video",
-            "scope": "full",
-            "parameters": {"query": query},
-        }
+        query_lower = query.lower()
+        if "undo" in query_lower:
+            return {
+                "intent": "undo",
+                "target": "system",
+                "scope": "system",
+                "parameters": {}
+            }
+        elif "narrator" in query_lower or "voice" in query_lower or "sound" in query_lower:
+            return {
+                "intent": "change_voice_tone",
+                "target": "audio",
+                "scope": "character:Narrator",
+                "parameters": {"tone": "dramatic" if "dramatic" in query_lower else "normal"}
+            }
+        elif "scene" in query_lower or "bright" in query_lower or "dark" in query_lower:
+            return {
+                "intent": "adjust_visual_style",
+                "target": "video_frame",
+                "scope": "scene:1",
+                "parameters": {"aesthetic": "darker" if "bright" in query_lower else "normal"}
+            }
+        else:
+            return {
+                "intent": "custom_edit",
+                "target": "video",
+                "scope": "full",
+                "parameters": {}
+            }
 
 if __name__ == "__main__":
     from dotenv import load_dotenv

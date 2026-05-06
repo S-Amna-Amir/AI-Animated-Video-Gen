@@ -10,6 +10,7 @@ if __name__ == '__main__':
 from state_manager.snapshot import create_snapshot, Snapshot
 from state_manager.history import get_history, diff_summary
 from state_manager.storage import get_connection
+import state_manager.storage as storage
 
 class StateManager:
     def __init__(self):
