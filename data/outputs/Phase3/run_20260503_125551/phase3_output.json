@@ -1,0 +1,20 @@
+{
+  "run_id": "run_20260503_125551",
+  "status": "partial",
+  "scene_images": {
+    "1": "data\\outputs\\Phase3\\run_20260503_125551\\images\\scene_1.png",
+    "2": "data\\outputs\\Phase3\\run_20260503_125551\\images\\scene_2.png",
+    "3": "data\\outputs\\Phase3\\run_20260503_125551\\images\\scene_3.png",
+    "4": "data\\outputs\\Phase3\\run_20260503_125551\\images\\scene_4.png"
+  },
+  "scene_clips": {
+    "1": "data\\outputs\\Phase3\\run_20260503_125551\\clips\\scene_1.mp4",
+    "2": "data\\outputs\\Phase3\\run_20260503_125551\\clips\\scene_2.mp4",
+    "3": "data\\outputs\\Phase3\\run_20260503_125551\\clips\\scene_3.mp4",
+    "4": "data\\outputs\\Phase3\\run_20260503_125551\\clips\\scene_4.mp4"
+  },
+  "final_video": "data\\outputs\\Phase3\\run_20260503_125551\\final_output.mp4",
+  "errors": [
+    "Video composition failed: end_time (27.98) should be smaller or equal to the clip's duration (5.00)."
+  ]
+}

@@ -1,0 +1,16 @@
+# 1. Update Core Tools first (Critical for 3.13)
+python.exe -m pip install --upgrade pip setuptools wheel
+
+# 2. Install Pillow (Binary only to avoid the __version__ error)
+pip install Pillow --only-binary :all:
+
+# 3. Install Audio/Video without Pydub/Pygame
+pip install edge-tts==6.1.12 moviepy==1.0.3 opencv-python
+
+pip install moviepy --upgrade
+
+# 4. Install the LLM Stack
+pip install langchain groq pydantic python-dotenv langgraph
+
+# 5. Install the Backend
+pip install fastapi uvicorn python-multipart requests numpy tqdm aiohttp aiofiles

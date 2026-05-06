@@ -1,0 +1,82 @@
+{
+  "final_video_path": "data\\outputs\\Phase3\\run_02\\final_output.mp4",
+  "run_id": "run_02",
+  "scene_count": 4,
+  "total_duration_seconds": 82.29,
+  "scenes": [
+    {
+      "scene_id": "1",
+      "image_paths": [
+        "data\\outputs\\Phase3\\run_02\\images\\scene_1_line_0.png",
+        "data\\outputs\\Phase3\\run_02\\images\\scene_1_line_1.png",
+        "data\\outputs\\Phase3\\run_02\\images\\scene_1_line_2.png",
+        "data\\outputs\\Phase3\\run_02\\images\\scene_1_line_3.png"
+      ],
+      "clip_paths": [
+        "data\\outputs\\Phase3\\run_02\\clips\\scene_1_line_0.mp4",
+        "data\\outputs\\Phase3\\run_02\\clips\\scene_1_line_1.mp4",
+        "data\\outputs\\Phase3\\run_02\\clips\\scene_1_line_2.mp4",
+        "data\\outputs\\Phase3\\run_02\\clips\\scene_1_line_3.mp4"
+      ],
+      "audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene01\\scene01_composed.mp3",
+      "duration_seconds": 27.98,
+      "tone": "default"
+    },
+    {
+      "scene_id": "2",
+      "image_paths": [
+        "data\\outputs\\Phase3\\run_02\\images\\scene_2_line_4.png",
+        "data\\outputs\\Phase3\\run_02\\images\\scene_2_line_5.png",
+        "data\\outputs\\Phase3\\run_02\\images\\scene_2_line_6.png",
+        "data\\outputs\\Phase3\\run_02\\images\\scene_2_line_7.png"
+      ],
+      "clip_paths": [
+        "data\\outputs\\Phase3\\run_02\\clips\\scene_2_line_4.mp4",
+        "data\\outputs\\Phase3\\run_02\\clips\\scene_2_line_5.mp4",
+        "data\\outputs\\Phase3\\run_02\\clips\\scene_2_line_6.mp4",
+        "data\\outputs\\Phase3\\run_02\\clips\\scene_2_line_7.mp4"
+      ],
+      "audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene02\\scene02_composed.mp3",
+      "duration_seconds": 13.87,
+      "tone": "default"
+    },
+    {
+      "scene_id": "3",
+      "image_paths": [
+        "data\\outputs\\Phase3\\run_02\\images\\scene_3_line_8.png",
+        "data\\outputs\\Phase3\\run_02\\images\\scene_3_line_9.png",
+        "data\\outputs\\Phase3\\run_02\\images\\scene_3_line_10.png"
+      ],
+      "clip_paths": [
+        "data\\outputs\\Phase3\\run_02\\clips\\scene_3_line_8.mp4",
+        "data\\outputs\\Phase3\\run_02\\clips\\scene_3_line_9.mp4",
+        "data\\outputs\\Phase3\\run_02\\clips\\scene_3_line_10.mp4"
+      ],
+      "audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene03\\scene03_composed.mp3",
+      "duration_seconds": 16.93,
+      "tone": "default"
+    },
+    {
+      "scene_id": "4",
+      "image_paths": [
+        "data\\outputs\\Phase3\\run_02\\images\\scene_4_line_11.png",
+        "data\\outputs\\Phase3\\run_02\\images\\scene_4_line_12.png",
+        "data\\outputs\\Phase3\\run_02\\images\\scene_4_line_13.png",
+        "data\\outputs\\Phase3\\run_02\\images\\scene_4_line_14.png",
+        "data\\outputs\\Phase3\\run_02\\images\\scene_4_line_15.png",
+        "data\\outputs\\Phase3\\run_02\\images\\scene_4_line_16.png"
+      ],
+      "clip_paths": [
+        "data\\outputs\\Phase3\\run_02\\clips\\scene_4_line_11.mp4",
+        "data\\outputs\\Phase3\\run_02\\clips\\scene_4_line_12.mp4",
+        "data\\outputs\\Phase3\\run_02\\clips\\scene_4_line_13.mp4",
+        "data\\outputs\\Phase3\\run_02\\clips\\scene_4_line_14.mp4",
+        "data\\outputs\\Phase3\\run_02\\clips\\scene_4_line_15.mp4",
+        "data\\outputs\\Phase3\\run_02\\clips\\scene_4_line_16.mp4"
+      ],
+      "audio_file": "data\\outputs\\Phase2\\run_02\\audio\\scene04\\scene04_composed.mp3",
+      "duration_seconds": 23.51,
+      "tone": "default"
+    }
+  ]
+}

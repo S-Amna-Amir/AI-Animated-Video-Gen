@@ -1,0 +1,54 @@
+READMEEE.md
+data/outputs/phase1/
+data/outputs/
+
+
+
+
+
+
+# Environment variables
+.env
+*.env
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+temp_audio.m4a
+temp_audio_*.m4a
+
+# Distribution packages
+*.egg-info/
+dist/
+build/
+
+# Test coverage
+.coverage
+htmlcov/
+
+# ML models
+*.safetensors
+*.ckpt
+*.bin

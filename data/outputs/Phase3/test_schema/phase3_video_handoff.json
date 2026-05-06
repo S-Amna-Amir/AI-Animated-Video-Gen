@@ -1,0 +1,20 @@
+{
+  "final_video_path": "C:\\Users\\asimk\\AppData\\Local\\Temp\\pytest-of-asimk\\pytest-2\\test_phase3_output_schema0\\final_output.mp4",
+  "run_id": "test_schema",
+  "scene_count": 1,
+  "total_duration_seconds": 1.0,
+  "scenes": [
+    {
+      "scene_id": "s1",
+      "image_paths": [
+        "img.png"
+      ],
+      "clip_paths": [
+        "clip.mp4"
+      ],
+      "audio_file": "",
+      "duration_seconds": 1.0,
+      "tone": "calm"
+    }
+  ]
+}
