@@ -95,26 +95,40 @@ Output ONLY valid JSON.
 
     def _fallback_classify(self, query: str) -> dict[str, Any]:
         query_lower = query.lower()
-        if "undo" in query_lower:
+        if "undo" in query_lower or "revert" in query_lower:
             return {
                 "intent": "undo",
                 "target": "system",
                 "scope": "system",
                 "parameters": {}
             }
-        elif "narrator" in query_lower or "voice" in query_lower or "sound" in query_lower:
+        elif "narrator" in query_lower or "voice" in query_lower or "sound" in query_lower or "speak" in query_lower or "music" in query_lower:
             return {
                 "intent": "change_voice_tone",
                 "target": "audio",
                 "scope": "character:Narrator",
                 "parameters": {"tone": "dramatic" if "dramatic" in query_lower else "normal"}
             }
-        elif "scene" in query_lower or "bright" in query_lower or "dark" in query_lower:
+        elif "scene" in query_lower or "bright" in query_lower or "dark" in query_lower or "background" in query_lower:
             return {
                 "intent": "adjust_visual_style",
                 "target": "video_frame",
                 "scope": "scene:1",
-                "parameters": {"aesthetic": "darker" if "bright" in query_lower else "normal"}
+                "parameters": {"aesthetic": "darker" if "bright" in query_lower or "dark" in query_lower else "normal"}
+            }
+        elif "script" in query_lower or "story" in query_lower or "ending" in query_lower or "regenerate" in query_lower:
+            return {
+                "intent": "regenerate_script",
+                "target": "script",
+                "scope": "full",
+                "parameters": {}
+            }
+        elif "video" in query_lower or "subtitles" in query_lower:
+            return {
+                "intent": "modify_video",
+                "target": "video",
+                "scope": "full",
+                "parameters": {}
             }
         else:
             return {
