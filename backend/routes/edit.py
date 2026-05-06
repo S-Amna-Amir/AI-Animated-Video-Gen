@@ -43,7 +43,7 @@ async def process_edit(req: EditRequest) -> Dict[str, Any]:
         await ws_manager.info(req.run_id, "Starting edit processing...")
         
         # Run the full pipeline
-        result = edit_agent.process_edit(req.run_id, req.command, req.current_state_json)
+        result = await edit_agent.process_edit(req.run_id, req.command, req.current_state_json)
         
         # Emit completion
         await ws_manager.success(req.run_id, f"Edit completed: {result['intent'].intent}")

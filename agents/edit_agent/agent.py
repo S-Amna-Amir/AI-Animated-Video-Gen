@@ -69,9 +69,9 @@ class EditAgent:
         logger.info(f"Created plan: {plan}")
         return {"plan": plan}
 
-    def _execute_edit(self, state: EditAgentState) -> Dict[str, Any]:
+    async def _execute_edit(self, state: EditAgentState) -> Dict[str, Any]:
         """Execute the planned edit."""
-        result = self.executor.execute(state["intent"], state["run_id"], state["current_state_json"])
+        result = await self.executor.execute(state["intent"], state["run_id"], state["current_state_json"])
         logger.info(f"Execution result: {result}")
         return {"result": result}
 
@@ -91,7 +91,7 @@ class EditAgent:
         logger.info(f"Created snapshot version {snapshot.version}")
         return {"new_version": snapshot.version}
 
-    def process_edit(self, run_id: str, command: str, current_state_json: Dict[str, Any]) -> Dict[str, Any]:
+    async def process_edit(self, run_id: str, command: str, current_state_json: Dict[str, Any]) -> Dict[str, Any]:
         """Process an edit command through the agent pipeline."""
         initial_state = {
             "run_id": run_id,
@@ -105,7 +105,7 @@ class EditAgent:
         
         # Run the graph with config
         config = {"configurable": {"thread_id": run_id}}
-        final_state = self.graph.invoke(initial_state, config=config)
+        final_state = await self.graph.ainvoke(initial_state, config=config)
         
         # Return the required fields
         return {

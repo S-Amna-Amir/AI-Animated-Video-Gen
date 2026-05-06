@@ -9,65 +9,151 @@ class EditExecutor:
     def __init__(self):
         self.state_manager = StateManager()
 
-    def execute(self, intent: EditIntent, run_id: str, current_state: Dict[str, Any]) -> Dict[str, Any]:
+    async def execute(self, intent: EditIntent, run_id: str, current_state: Dict[str, Any]) -> Dict[str, Any]:
         """Execute the edit based on the classified intent."""
         
         if intent.target == "audio":
-            return self._execute_audio_edit(intent, run_id, current_state)
+            return await self._execute_audio_edit(intent, run_id, current_state)
         elif intent.target == "video_frame":
-            return self._execute_video_frame_edit(intent, run_id, current_state)
+            return await self._execute_video_frame_edit(intent, run_id, current_state)
         elif intent.target == "video":
-            return self._execute_video_edit(intent, run_id, current_state)
+            return await self._execute_video_edit(intent, run_id, current_state)
         elif intent.target == "script":
-            return self._execute_script_edit(intent, run_id, current_state)
+            return await self._execute_script_edit(intent, run_id, current_state)
         elif intent.target == "system":
-            return self._execute_system_edit(intent, run_id, current_state)
+            return await self._execute_system_edit(intent, run_id, current_state)
         else:
             raise ValueError(f"Unknown target: {intent.target}")
 
-    def _execute_audio_edit(self, intent: EditIntent, run_id: str, current_state: Dict[str, Any]) -> Dict[str, Any]:
+    async def _execute_audio_edit(self, intent: EditIntent, run_id: str, current_state: Dict[str, Any]) -> Dict[str, Any]:
         """Execute audio-related edits."""
-        # TODO: Integrate with existing audio phase service/agent
-        # For now, return mock success
-        logger.info(f"Mock executing audio edit: {intent}")
-        return {
-            "status": "success",
-            "message": f"Audio edit applied: {intent.intent} on {intent.scope}",
-            "updated_state": current_state  # In real impl, this would be updated
-        }
+        try:
+            from backend.services.phase2_service import run_phase2
+            
+            # Update current_state with intent parameters
+            updated_state = current_state.copy()
+            if intent.scope.startswith("character:"):
+                char = intent.scope.split(":")[1]
+                if char in updated_state:
+                    updated_state[char] = intent.parameters.get("tone", updated_state[char])
+            
+            # Run phase 2 with updated parameters
+            result = await run_phase2(run_id)
+            
+            if result.get("status") == "success":
+                logger.info(f"Audio edit executed: {intent}")
+                return {
+                    "status": "success",
+                    "message": f"Audio regenerated: {intent.intent} on {intent.scope}",
+                    "updated_state": updated_state
+                }
+            else:
+                logger.warning(f"Audio edit failed: {result.get('error')}")
+                return {
+                    "status": "partial_success",
+                    "message": f"Audio edit attempted but failed: {result.get('error')}",
+                    "updated_state": updated_state
+                }
+        except Exception as e:
+            logger.warning(f"Audio service not available: {e}")
+            # Fallback to mock
+            updated_state = current_state.copy()
+            return {
+                "status": "partial_success",
+                "message": f"Audio edit simulated: {intent.intent} on {intent.scope} (service unavailable)",
+                "updated_state": updated_state
+            }
 
-    def _execute_video_frame_edit(self, intent: EditIntent, run_id: str, current_state: Dict[str, Any]) -> Dict[str, Any]:
+    async def _execute_video_frame_edit(self, intent: EditIntent, run_id: str, current_state: Dict[str, Any]) -> Dict[str, Any]:
         """Execute video frame/image generation edits."""
-        # TODO: Integrate with existing video/image generation service
-        # For now, return mock success
-        logger.info(f"Mock executing video frame edit: {intent}")
-        return {
-            "status": "success",
-            "message": f"Video frame edit applied: {intent.intent} on {intent.scope}",
-            "updated_state": current_state
-        }
+        try:
+            from backend.services.phase3_service import run_phase3
+            
+            # Update current_state with intent parameters
+            updated_state = current_state.copy()
+            if intent.scope.startswith("scene:"):
+                scene = intent.scope.split(":")[1]
+                if "scenes" not in updated_state:
+                    updated_state["scenes"] = {}
+                updated_state["scenes"][scene] = intent.parameters
+            
+            # Run phase 3 to regenerate images
+            result = await run_phase3(run_id)
+            
+            if result.get("status") == "success":
+                logger.info(f"Video frame edit executed: {intent}")
+                return {
+                    "status": "success",
+                    "message": f"Scene images regenerated: {intent.intent} on {intent.scope}",
+                    "updated_state": updated_state
+                }
+            else:
+                logger.warning(f"Video frame edit failed: {result.get('error')}")
+                return {
+                    "status": "partial_success",
+                    "message": f"Video frame edit attempted but failed: {result.get('error')}",
+                    "updated_state": updated_state
+                }
+        except Exception as e:
+            logger.warning(f"Video service not available: {e}")
+            # Fallback to mock
+            updated_state = current_state.copy()
+            return {
+                "status": "partial_success",
+                "message": f"Video frame edit simulated: {intent.intent} on {intent.scope} (service unavailable)",
+                "updated_state": updated_state
+            }
 
-    def _execute_video_edit(self, intent: EditIntent, run_id: str, current_state: Dict[str, Any]) -> Dict[str, Any]:
+    async def _execute_video_edit(self, intent: EditIntent, run_id: str, current_state: Dict[str, Any]) -> Dict[str, Any]:
         """Execute video composition edits (FFmpeg only)."""
-        # TODO: Integrate with FFmpeg composition step
-        # For now, return mock success
-        logger.info(f"Mock executing video edit: {intent}")
-        return {
-            "status": "success",
-            "message": f"Video composition updated: {intent.intent} on {intent.scope}",
-            "updated_state": current_state
-        }
+        try:
+            from backend.services.phase3_service import run_phase3
+            
+            # For video edits, assume FFmpeg recomposition is part of phase 3
+            # TODO: Add flag to skip image generation if possible
+            result = await run_phase3(run_id)
+            
+            if result.get("status") == "success":
+                logger.info(f"Video edit executed: {intent}")
+                return {
+                    "status": "success",
+                    "message": f"Video recomposed: {intent.intent} on {intent.scope}",
+                    "updated_state": current_state
+                }
+            else:
+                logger.warning(f"Video edit failed: {result.get('error')}")
+                return {
+                    "status": "partial_success",
+                    "message": f"Video edit attempted but failed: {result.get('error')}",
+                    "updated_state": current_state
+                }
+        except Exception as e:
+            logger.warning(f"Video service not available: {e}")
+            # Fallback to mock
+            return {
+                "status": "partial_success",
+                "message": f"Video edit simulated: {intent.intent} on {intent.scope} (service unavailable)",
+                "updated_state": current_state
+            }
 
-    def _execute_script_edit(self, intent: EditIntent, run_id: str, current_state: Dict[str, Any]) -> Dict[str, Any]:
+    async def _execute_script_edit(self, intent: EditIntent, run_id: str, current_state: Dict[str, Any]) -> Dict[str, Any]:
         """Execute script regeneration edits."""
-        # TODO: Re-invoke the story agent
-        # For now, return mock success
-        logger.info(f"Mock executing script edit: {intent}")
-        return {
-            "status": "success",
-            "message": f"Script regenerated: {intent.intent} on {intent.scope}",
-            "updated_state": current_state
-        }
+        try:
+            # TODO: Integrate with story agent when available
+            # For now, fallback
+            logger.warning("Story agent not yet integrated")
+            return {
+                "status": "partial_success",
+                "message": f"Script edit simulated: {intent.intent} on {intent.scope} (story agent unavailable)",
+                "updated_state": current_state
+            }
+        except Exception as e:
+            logger.warning(f"Script service error: {e}")
+            return {
+                "status": "partial_success",
+                "message": f"Script edit failed: {e}",
+                "updated_state": current_state
+            }
 
     def _execute_system_edit(self, intent: EditIntent, run_id: str, current_state: Dict[str, Any]) -> Dict[str, Any]:
         """Execute system-level edits (like undo)."""
