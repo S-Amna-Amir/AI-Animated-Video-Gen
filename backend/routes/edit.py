@@ -1,134 +1,104 @@
 """
-Edit Agent routes — stub implementation.
-Intent classification is keyword-based (no LLM call).
-Execution delegates to the appropriate phase service.
-
-POST /edit
-POST /edit/{edit_id}/confirm
-GET  /edit/history/{run_id}
+Edit Agent routes — full implementation with EditAgent and StateManager.
 """
 
 from __future__ import annotations
 
-import asyncio
-from typing import Any
-from uuid import uuid4
+from typing import Any, Dict
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException
-from pydantic import BaseModel, ConfigDict
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 
-from backend.services import phase2_service, phase3_service, state_service
+from agents.edit_agent.agent import EditAgent
+from state_manager.state_manager import StateManager
+from backend.websocket.manager import ws_manager
 
 router = APIRouter(tags=["edit"])
 
-from agents.edit_agent.intent_classifier import IntentClassifier
-
-# ── in-memory store of unconfirmed edits ──────────────────────────────────────
-_pending_edits: dict[str, dict[str, Any]] = {}
-classifier = IntentClassifier()
-
-def _classify(query: str) -> dict[str, Any]:
-    return classifier.classify(query)
-
+# Initialize services
+edit_agent = EditAgent()
+state_manager = StateManager()
 
 # ── request models ────────────────────────────────────────────────────────────
 
 class EditRequest(BaseModel):
-    model_config = ConfigDict(extra="allow")
-
     run_id: str
-    query: str
+    command: str
+    current_state_json: Dict[str, Any]
 
-
-# ── background task helpers ───────────────────────────────────────────────────
-
-def _spawn_phase2_rerun(run_id: str) -> None:
-    asyncio.create_task(
-        phase2_service.rerun_phase2_steps(run_id=run_id, steps=["full"])
-    )
-
-
-def _spawn_phase3_rerun(run_id: str) -> None:
-    asyncio.create_task(phase3_service.run_phase3(run_id=run_id))
-
+class UndoRequest(BaseModel):
+    run_id: str
+    version: int
 
 # ── endpoints ─────────────────────────────────────────────────────────────────
 
 @router.post("/edit")
-async def classify_edit(req: EditRequest) -> dict[str, Any]:
+async def process_edit(req: EditRequest) -> Dict[str, Any]:
     """
-    Classify the edit intent and store it pending confirmation.
-    No pipeline steps are triggered yet.
+    Process an edit command through the full EditAgent pipeline.
+    Returns the result with new version, intent, plan, and execution result.
     """
-    detected = _classify(req.query)
-    edit_id = f"edit_{uuid4().hex[:8]}"
-
-    _pending_edits[edit_id] = {
-        "edit_id": edit_id,
-        "run_id": req.run_id,
-        **detected,
-    }
-
-    return {
-        "edit_id": edit_id,
-        "run_id": req.run_id,
-        "intent": detected["intent"],
-        "target": detected["target"],
-        "scope": detected["scope"],
-        "parameters": detected["parameters"],
-        "status": "classified",
-        "message": "Review and confirm",
-    }
-
-
-@router.post("/edit/{edit_id}/confirm")
-async def confirm_edit(
-    edit_id: str,
-    background_tasks: BackgroundTasks,
-) -> dict[str, Any]:
-    """
-    Execute the previously classified edit.
-    Triggers the appropriate phase re-run as a background task.
-    """
-    edit = _pending_edits.get(edit_id)
-    if edit is None:
-        raise HTTPException(status_code=404, detail=f"No pending edit found for edit_id={edit_id}")
-
-    run_id: str = edit["run_id"]
-    target: str = edit["target"]
-    intent: str = edit["intent"]
-
-    # Script target → Phase 1 not integrated
-    if target == "script":
-        # Clean up but return error — don't leave it pending
-        del _pending_edits[edit_id]
+    try:
+        # Emit progress event
+        await ws_manager.info(req.run_id, "Starting edit processing...")
+        
+        # Run the full pipeline
+        result = edit_agent.process_edit(req.run_id, req.command, req.current_state_json)
+        
+        # Emit completion
+        await ws_manager.success(req.run_id, f"Edit completed: {result['intent'].intent}")
+        
         return {
-            "edit_id": edit_id,
-            "status": "error",
-            "message": "Phase 1 (script regeneration) is not yet integrated.",
+            "new_version": result["new_version"],
+            "intent": result["intent"].model_dump(),
+            "plan": result["plan"].model_dump(),
+            "result": result["result"],
+            "success": True
         }
+    except Exception as e:
+        await ws_manager.error(req.run_id, f"Edit failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
-    # Dispatch based on target
-    if target == "audio":
-        background_tasks.add_task(_spawn_phase2_rerun, run_id)
-    elif target in ("video_frame", "video"):
-        background_tasks.add_task(_spawn_phase3_rerun, run_id)
-    else:
-        # Unknown target — default to Phase 3 re-run
-        background_tasks.add_task(_spawn_phase3_rerun, run_id)
+@router.post("/undo")
+async def undo_edit(req: UndoRequest) -> Dict[str, Any]:
+    """
+    Revert to a specific version.
+    Returns the restored state and new version number.
+    """
+    try:
+        # Revert to the specified version
+        reverted_snapshot = state_manager.revert(req.run_id, req.version)
+        
+        await ws_manager.success(req.run_id, f"Reverted to version {req.version}")
+        
+        return {
+            "restored_state": reverted_snapshot.state_json,
+            "new_version": reverted_snapshot.version,
+            "success": True
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        await ws_manager.error(req.run_id, f"Undo failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
-    # Persist a version snapshot
-    state_service.save_snapshot(
-        run_id=run_id,
-        phase="edit",
-        description=intent,
-    )
-
-    del _pending_edits[edit_id]
-
-    return {"edit_id": edit_id, "status": "executing", "run_id": run_id}
-
-
-@router.get("/edit/history/{run_id}")
-async def edit_history(run_id: str) -> list[dict[str, Any]]:
-    return state_service.list_versions(run_id)
+@router.get("/history/{run_id}")
+async def get_edit_history(run_id: str) -> list[Dict[str, Any]]:
+    """
+    Get the full version history for a run.
+    Returns list of snapshots with version, timestamp, edit_command, state_json, asset_paths.
+    """
+    try:
+        history = state_manager.history(run_id)
+        return [
+            {
+                "version": snap.version,
+                "timestamp": snap.timestamp,
+                "edit_command": snap.edit_command,
+                "state_json": snap.state_json,
+                "asset_paths": snap.asset_paths
+            }
+            for snap in history
+        ]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

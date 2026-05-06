@@ -11,7 +11,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from backend.routes import pipeline, phases, files, runs, edit
+from backend.routes import pipeline, phases, files, run, edit
 from backend.websocket import routes as ws_routes
 
 
@@ -66,7 +66,7 @@ async def health() -> dict:
 app.include_router(pipeline.router, prefix="/api")
 app.include_router(phases.router,   prefix="/api")
 app.include_router(files.router,    prefix="/api")
-app.include_router(runs.router,     prefix="/api")
+app.include_router(run.router,     prefix="/api")
 app.include_router(edit.router,     prefix="/api")
 
 # ── WebSocket router (no /api prefix) ────────────────────────────────────────
@@ -74,3 +74,7 @@ app.include_router(ws_routes.router)
 
 # ── Static files — MUST be last ───────────────────────────────────────────────
 app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
