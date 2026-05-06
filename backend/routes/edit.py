@@ -21,90 +21,14 @@ from backend.services import phase2_service, phase3_service, state_service
 
 router = APIRouter(tags=["edit"])
 
+from agents.edit_agent.intent_classifier import IntentClassifier
+
 # ── in-memory store of unconfirmed edits ──────────────────────────────────────
 _pending_edits: dict[str, dict[str, Any]] = {}
-
-
-# ── keyword → intent mapping (mirrors frontend intentMap) ─────────────────────
-_INTENT_MAP: list[tuple[str, dict[str, Any]]] = [
-    (
-        "change voice tone",
-        {
-            "intent": "change_voice_tone",
-            "target": "audio",
-            "scope": "character:JACK",
-            "parameters": {"tone": "whispered"},
-        },
-    ),
-    (
-        "make scene darker",
-        {
-            "intent": "adjust_visual_style",
-            "target": "video_frame",
-            "scope": "scene:2",
-            "parameters": {"aesthetic": "darker,-0.1 brightness"},
-        },
-    ),
-    (
-        "remove subtitles",
-        {
-            "intent": "remove_subtitles",
-            "target": "video",
-            "scope": "full",
-            "parameters": {},
-        },
-    ),
-    (
-        "speed up scene 1",
-        {
-            "intent": "adjust_timing",
-            "target": "video",
-            "scope": "scene:1",
-            "parameters": {"speed_factor": 1.5},
-        },
-    ),
-    (
-        "add background music",
-        {
-            "intent": "add_bgm",
-            "target": "audio",
-            "scope": "scene:3",
-            "parameters": {"mood": "ambient calm"},
-        },
-    ),
-    (
-        "regenerate the script",
-        {
-            "intent": "regenerate_script",
-            "target": "script",
-            "scope": "full",
-            "parameters": {},
-        },
-    ),
-    (
-        "regenerate character design for jack",
-        {
-            "intent": "regenerate_character",
-            "target": "video_frame",
-            "scope": "character:JACK",
-            "parameters": {},
-        },
-    ),
-]
-
+classifier = IntentClassifier()
 
 def _classify(query: str) -> dict[str, Any]:
-    lower = query.lower()
-    for keyword, intent_data in _INTENT_MAP:
-        if keyword in lower:
-            return dict(intent_data)
-    # fallback
-    return {
-        "intent": "custom_edit",
-        "target": "video",
-        "scope": "full",
-        "parameters": {"query": query},
-    }
+    return classifier.classify(query)
 
 
 # ── request models ────────────────────────────────────────────────────────────

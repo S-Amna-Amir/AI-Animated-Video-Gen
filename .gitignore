@@ -52,3 +52,4 @@ htmlcov/
 *.safetensors
 *.ckpt
 *.bin
+.env
