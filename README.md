@@ -1,227 +1,447 @@
-# AgenticAI — Phase 1: Story, Script & Character Design
+# 🎬 AI-Animated-Video-Generation System
 
-## Overview
+> From a single prompt to a complete short film — fully agentic, end-to-end, autonomous production.
 
-Phase 1 is the **creative foundation** of the AI-Powered Animated Video Generation System. It accepts a single free-form natural language prompt and autonomously produces a fully validated JSON pipeline state containing:
-
-- **Story structure** — title, logline, genre, tone, 3–4 acts, protagonist/antagonist
-- **Character roster** — names, roles, visual descriptions, voice configs (consumed by Phase 2)
-- **Scene-by-scene script** — dialogue, visual cues, camera angles, image generation prompts (consumed by Phase 3)
-- **Downstream handoff files** — `phase2_audio_handoff.json` and `phase3_video_handoff.json`
-
-All output is validated against a shared Pydantic schema that acts as the inter-phase contract.
+![Status](https://img.shields.io/badge/Status-Phase%202%20Complete-brightgreen?style=flat-square)
+![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square&logo=python)
+![Edge-TTS](https://img.shields.io/badge/Edge--TTS-Neural%20Voices-green?style=flat-square)
+![Freesound](https://img.shields.io/badge/Freesound-BGM%20Integration-red?style=flat-square)
 
 ---
 
-## Architecture
+## 📖 Quick Navigation
+
+- [🌟 Project Overview](#-project-overview)
+- [📋 Phase Status](#-phase-status)  
+- [🎤 Phase 2: Audio Generation](#-phase-2-audio-generation--integration) ← **COMPLETE**
+- [🎬 Phase 3: Video Generation](#-phase-3-video-generation--composition) ← **COMPLETE**
+- [🛠 Setup & Installation](#-setup--installation)
+- [🚀 Running the Pipeline](#-running-the-pipeline)
+- [📁 Project Structure](#-project-structure)
+
+---
+
+## 🌟 Project Overview
+
+**AI-Animated-Video-Generation** is a multi-phase, LangGraph-based agentic system that orchestrates end-to-end video creation from a single natural-language prompt:
 
 ```
 User Prompt
-    │
-    ▼
-┌─────────────────────────────────────────────┐
-│          LangGraph Pipeline (Phase 1)        │
-│                                             │
-│  story_node ──► character_node ──►          │
-│  script_node ──► validate_node              │
-│                                             │
-│  Each node: TextGeneratorTool / JsonStructurer │
-│  Error handler: auto-retry (max 2)          │
-└─────────────────────────────────────────────┘
-    │
-    ▼
-Phase1Output (Pydantic validated)
-    │
-    ├── story.json
-    ├── characters.json
-    ├── script.json
-    ├── phase2_audio_handoff.json  ──► Phase 2
-    ├── phase3_video_handoff.json  ──► Phase 3
-    ├── summary.json               ──► Phase 4 dashboard
-    └── phase1_output.json         (full consolidated state)
+    ↓
+[Phase 1] Story & Script Generation (LLM)
+    ↓
+[Phase 2] Audio Generation & BGM Integration ✅
+    ↓
+[Phase 3] Video Generation & Composition ✅
+    ↓
+[Phase 4] Web Interface & Orchestration (Future)
+    ↓
+[Phase 5] Edit Agent & Undo System (Future)
+    ↓
+Final MP4 Output
 ```
 
-### LangGraph Nodes
-
-| Node | Responsibility | Tools Used |
-|------|---------------|-----------|
-| `story_node` | Expand prompt into full narrative arc | `JsonStructurerTool` |
-| `character_node` | Design character roster with voice configs | `TextGeneratorTool` |
-| `script_node` | Write scene-by-scene script with visual prompts | `TextGeneratorTool` |
-| `validate_node` | Consistency check (local + LLM-powered) | `TextGeneratorTool` |
+Each phase is an independent agentic module that:
+- Reads structured JSON input from previous phase
+- Processes through orchestrated agents
+- Outputs validated JSON for downstream phases
+- Supports re-running in isolation
 
 ---
 
-## Setup
+## 📋 Phase Status
 
-### 1. Install dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-### 2. Configure API key
-
-Create a `.env` file in the project root:
-
-```env
-ANTHROPIC_API_KEY=sk-ant-...
-```
-
-### 3. Run Phase 1
-
-```bash
-# With a prompt argument
-python run_phase1.py "A brave knight must retrieve a stolen dragon egg"
-
-# With scene count
-python run_phase1.py "Space explorers find an ancient alien city" --scenes 5
-
-# Interactive mode
-python run_phase1.py --interactive
-```
+| Phase | Status | Description |
+|-------|--------|-------------|
+| **Phase 1** | ⏳ Pending | LLM-based story & script generation |
+| **Phase 2** | ✅ **COMPLETE** | Audio synthesis with BGM layering |
+| **Phase 3** | ✅ **COMPLETE** | Image generation, Ken Burns animation & video composition |
+| **Phase 4** | ⏳ Pending | Web dashboard & orchestration |
+| **Phase 5** | ⏳ Pending | Edit agent & versioned undo system |
 
 ---
 
-## Output Files
+## 🎤 Phase 2: Audio Generation & Integration
 
-All artefacts are saved to `data/outputs/`:
+**Status**: ✅ **FULLY IMPLEMENTED & TESTED**
 
-| File | Description | Consumed By |
-|------|-------------|------------|
-| `story.json` | Narrative structure | All phases |
-| `characters.json` | Character roster | All phases |
-| `script.json` | Scene-by-scene script | Phase 3 |
-| `phase2_audio_handoff.json` | Voice config map | Phase 2 |
-| `phase3_video_handoff.json` | Visual prompts + camera | Phase 3 |
-| `summary.json` | Run status, errors, tool log | Phase 4 |
-| `phase1_output.json` | Full consolidated state | All phases |
+Phase 2 transforms Phase 1 narrative outputs into high-quality synchronized audio with atmospheric background music. Each scene receives:
 
----
+1. **Character Voiceovers** - TTS with unique neural voices per character
+2. **Background Music** - Scene-mood-based ambient audio via Freesound API
+3. **Audio Composition** - Voice + BGM mixing with ducking and smooth transitions
+4. **Timing Manifest** - Millisecond-accurate A/V sync data for Phase 3
 
-## JSON Schema
+### Key Capabilities
 
-### `Phase1Output` (root)
+#### 🎭 Character Voice Mapping
+- **15+ Unique Voices** - Microsoft Edge-TTS neural voices
+- **Per-Character Consistency** - Same character always uses same voice
+- **Automatic Gender Detection** - Unknown characters assigned appropriate voice
+- **Custom Mappings** - Override defaults with custom assignments
 
-```json
-{
-  "workflow_id": "workflow_20260501_120000",
-  "timestamp": "2026-05-01T12:00:00",
-  "user_prompt": "...",
-  "story": { ... },
-  "characters": [ ... ],
-  "scenes": [ ... ],
-  "phase2_audio_handoff": { ... },
-  "phase3_video_handoff": { ... },
-  "summary": { ... }
-}
+**Example Voice Assignments**:
+```
+JACK      → en-US-GuyNeural (American male)
+RACHEL    → en-US-AriaNeural (American female)
+VLADIMIR  → en-GB-OliverNeural (British male - authority for Russian character)
+ALEXANDRA → en-GB-SoniaNeural (British female)
 ```
 
-### `Character`
+#### 🎵 Background Music Integration
+- **Freesound API Search** - Queries for mood-based ambient audio
+- **LLM Mood Analysis** - Groq generates 3-word search queries from scene descriptions
+  - Example: "dark synth ambient" for tense scenes
+- **Fallback Support** - Uses default neutral BGM if search fails
+- **Smart Looping** - Automatically loops short BGM clips to match dialogue duration
 
-```json
-{
-  "name": "ARIA",
-  "role": "protagonist",
-  "personality": "...",
-  "appearance": "...",
-  "style_reference": "Anime cinematic, vibrant colors",
-  "voice_config": {
-    "tone": "warm",
-    "speed": 1.0,
-    "pitch": "medium",
-    "emotion": "curious"
-  },
-  "first_appearance": 1,
-  "dialogue_samples": []
-}
+#### 🔊 Per-Scene Audio Composition
+- **Volume Ducking** - BGM reduced to -20dB during dialogue
+- **Fade Transitions** - 500ms fade-in/fade-out for smooth scene changes
+- **FFmpeg Integration** - Professional-grade audio mixing
+- **Graceful Degradation** - Works with or without BGM/FFmpeg
+
+#### 📁 Organized Output Structure
+```
+data/outputs/Phase2/
+├── run_01/                    ← Sequential numbering
+│   ├── audio/
+│   │   ├── scene01/           ← Per-scene directories
+│   │   │   ├── JACK_line001.mp3
+│   │   │   ├── RACHEL_line002.mp3
+│   │   │   └── bgm.mp3
+│   │   ├── scene02/
+│   │   └── ...
+│   ├── timing_manifest.json   ← A/V sync metadata
+│   ├── bgm_metadata.json      ← Freesound details per scene
+│   ├── master_audio_track.mp3 ← Concatenated final audio
+│   ├── phase2_summary.json
+│   └── phase2_config.json
+├── run_02/
+└── ...
 ```
 
-### `Scene`
-
+#### ⏱ Timing Manifest Format
 ```json
-{
-  "scene_id": 1,
-  "location": "MARS SURFACE",
-  "setting_description": "...",
-  "mood": "mysterious",
-  "tone": "...",
-  "dialogue": [
-    {
-      "speaker": "ARIA",
-      "line": "There's water. There's actually water.",
-      "visual_cue": "Close-up of ARIA, eyes wide with wonder.",
-      "emotion": "amazed"
+[
+  {
+    "scene_id": 1,
+    "speaker": "JACK",
+    "audio_file": "data/outputs/Phase2/run_01/audio/scene01/JACK_line001.mp3",
+    "duration_ms": 2250,
+    "line_index": 1,
+    "text": "We can't keep her here for much longer, Rachel. The KGB will find her.",
+    "voice": "en-US-GuyNeural",
+    "bgm_used": true,
+    "bgm_info": {
+      "query": "dark synth ambient",
+      "source": "freesound",
+      "name": "Dark Ambient Synth Loop",
+      "freesound_id": 123456
     }
-  ],
-  "characters": ["ARIA"],
-  "duration_seconds": 25,
-  "visual": {
-    "image_prompt": "Astronaut on Mars surface, glowing ocean below...",
-    "camera_angle": "wide shot",
-    "lighting": "dramatic blue glow",
-    "color_palette": "red and blue contrast",
-    "transition_in": "fade",
-    "transition_out": "cut"
   }
+]
+```
+
+### Module Architecture
+
+```
+mcp/tools/audio_tools/
+├── voice_mapper.py        → Character-to-voice assignment
+├── tts_tool.py           → Edge-TTS synthesis engine
+├── bgm_tool.py           → Freesound API integration
+├── scene_mood_analyzer.py → LLM-based mood analysis
+└── audio_composer.py     → FFmpeg mixing & ducking
+
+agents/audio_agent/
+├── agent.py              → Basic audio-only agent
+├── enhanced_agent.py     → Full BGM-integrated agent ✨
+├── run_manager.py        → Run directory management
+├── planner.py           → Workflow orchestration
+└── PHASE2_IMPLEMENTATION.md → Detailed technical docs
+```
+
+### Usage Examples
+
+#### Basic Usage
+```python
+import asyncio
+from agents.audio_agent.enhanced_agent import run_enhanced_audio_agent
+
+# Run with all features
+results = asyncio.run(run_enhanced_audio_agent(
+    phase1_dir="data/outputs/Phase1",
+    phase2_dir="data/outputs/Phase2",
+    freesound_api_key="your_api_key_here"  # Optional
+))
+
+print(f"Generated {results['audio_files_generated']} audio files")
+print(f"Scenes with BGM: {results['scenes_with_bgm']}")
+print(f"Master track: {results['master_audio_track']}")
+```
+
+#### Test with Dummy Data
+```bash
+python scripts/test_phase2.py
+```
+
+### Configuration
+
+#### Environment Variables
+```bash
+FREESOUND_API_KEY=your_api_key_here     # Optional for Freesound search
+GROQ_API_KEY=your_groq_key              # Optional for mood analysis
+```
+
+#### Custom Voice Mappings
+```python
+custom_voices = {
+    "VILLAIN": "en-GB-RyanNeural",
+    "HERO": "en-US-GuyNeural",
+    "NARRATOR": "en-US-ArthurNeural"
 }
+
+agent = EnhancedAudioAgent(
+    custom_voice_mappings=custom_voices
+)
+```
+
+### Performance
+
+**Benchmark (4 scenes, 17 dialogues)**:
+- TTS Synthesis: ~5 minutes
+- BGM Search & Download: ~30 seconds per scene
+- Audio Composition: ~2 minutes
+- Master Concatenation: ~10 seconds
+- **Total**: ~8 minutes (with BGM) / ~3 minutes (voice-only)
+
+---
+
+## 🎬 Phase 3: Video Generation & Composition
+
+**Status**: ✅ **FULLY IMPLEMENTED & TESTED**
+
+Phase 3 transforms Phase 1 scene data and Phase 2 timing manifests into a fully composed, animated video with subtitles. It handles per-dialogue image generation, dynamic Ken Burns animation, and precision audio-video synchronization.
+
+### Key Capabilities
+
+#### 🖼️ Dynamic Image Generation
+- **Hugging Face Inference API** - Generates high-quality images via `black-forest-labs/FLUX.1-schnell`
+- **Per-Dialogue Generation** - Generates unique visual frames for every line of dialogue based on emotion and tone
+- **Prompt Engineering** - Automatically constructs cinematic prompts using character appearances and settings
+
+#### 🎥 Ken Burns Animation & Filtering
+- **Dynamic FFmpeg Effects** - Smooth pan and zoom filters (zoom_in, pan_left, pan_right, dramatic_push)
+- **Mood-Based Visuals** - Automatically selects animation type and color grading based on scene tone (e.g., tense = dramatic push + high contrast)
+- **Aesthetics** - Cinematic vignette overlays and cross-fade transitions
+
+#### 🎬 Video Composition
+- **MoviePy Integration** - Seamlessly combines animated clips with Phase 2 master audio
+- **Subtitles** - Built-in subtitle burn-in using `TextClip` and `CompositeVideoClip`
+- **Synchronization** - Millisecond-accurate clip trimming based on dialogue duration
+
+### Module Architecture
+
+```
+mcp/tools/video_tools/
+├── image_generator.py     → Hugging Face API image generation orchestration
+├── animator.py            → FFmpeg Ken Burns & color filters
+├── video_compositor.py    → MoviePy timeline composition & subtitles
+├── prompt_builder.py      → Dynamic prompt generation
+├── comfy_client.py        → API client wrapper
+└── workflow_builder.py    → Workflow definitions
+
+agents/video_agent/
+├── agent.py               → Phase 3 orchestration
+├── run_manager.py         → Run directory & gap filling
+└── tests/test_phase3.py   → Comprehensive test suite
+```
+
+### Usage Examples
+
+#### Run Phase 3 Pipeline
+```bash
+python scripts/run_phase3.py --phase2-run data/outputs/Phase2/run_02
+```
+
+#### Run Mock Mode (No API Calls)
+```bash
+python scripts/run_phase3.py --phase2-run data/outputs/Phase2/run_02 --mock
 ```
 
 ---
 
-## Running Tests
+## 🛠 Setup & Installation
+
+### Prerequisites
+- Python 3.10+
+- Virtual environment (recommended)
+- FFmpeg (optional, for audio composition)
+- Freesound API key (optional, for BGM)
+
+### Installation Steps
 
 ```bash
-pytest agents/story_agent/tests/test_story_agent.py -v
-```
+# 1. Clone repository
+git clone <repo_url>
+cd AI-Animated-Video-Gen
 
-16 tests covering:
-- Pydantic schema validation (field bounds, required fields)
-- `JsonStructurerTool` fence-stripping and parse logic
-- `FileTool` read/write operations
-- Full `StoryAgent.run()` with mocked LLM calls
-- Edge cases: empty prompt, invalid `num_scenes`
+# 2. Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# 3. Install dependencies
+pip install -r requirements.txt
+
+# 4. Configure environment (optional)
+cp .env.example .env
+# Edit .env with your API keys
+
+# 5. Install FFmpeg (optional)
+# Ubuntu/Debian:
+sudo apt-get install ffmpeg
+
+# macOS:
+brew install ffmpeg
+
+# Windows: Download from https://ffmpeg.org/download.html
+```
 
 ---
 
-## Technology Stack
+## 🚀 Running the Pipeline
 
-| Layer | Technology |
-|-------|-----------|
-| LLM | Anthropic Claude (`claude-sonnet-4-20250514`) |
-| Agent Framework | LangGraph `StateGraph` with `MemorySaver` checkpointer |
-| Schema Validation | Pydantic v2 |
-| MCP Tools | `TextGeneratorTool`, `JsonStructurerTool`, `FileTool`, `LoggerTool` |
-| Testing | pytest + pytest-mock |
+### Test Phase 2
+```bash
+python scripts/test_phase2.py
+```
+
+### Run Phase 2 Programmatically
+```python
+import asyncio
+from agents.audio_agent.enhanced_agent import run_enhanced_audio_agent
+
+async def main():
+    results = await run_enhanced_audio_agent()
+    print(results)
+
+asyncio.run(main())
+```
 
 ---
 
-## File Structure
+## 📁 Project Structure
 
 ```
-phase1/
-├── run_phase1.py                    # CLI entry point
+AI-Animated-Video-Gen/
+├── README.md                          ← You are here
 ├── requirements.txt
-├── README.md
-├── shared/
-│   └── schemas/
-│       └── phase1_schema.py         # Shared Pydantic contract
-├── mcp/
-│   ├── base_tool.py
-│   └── tools/
-│       ├── llm_tools/
-│       │   ├── text_generator.py    # Claude API wrapper
-│       │   └── json_structurer.py   # Schema-enforced JSON generator
-│       └── system_tools/
-│           ├── file_tool.py
-│           └── logger_tool.py
+├── .env                              # API keys (not committed)
+│
 ├── agents/
-│   └── story_agent/
-│       ├── agent.py                 # Main StoryAgent class
-│       ├── planner.py               # LangGraph nodes + graph builder
-│       ├── prompts.py               # All system + user prompt templates
+│   ├── audio_agent/                  # Phase 2 ✅
+│   │   ├── __init__.py
+│   │   ├── agent.py                  # Basic agent
+│   │   ├── enhanced_agent.py         # BGM-integrated agent ✨
+│   │   ├── run_manager.py            # Run management
+│   │   ├── planner.py               # Workflow planning
+│   │   ├── PHASE2_IMPLEMENTATION.md  # Full technical docs
+│   │   └── tests/
+│   │
+│   └── video_agent/                  # Phase 3 ✅
+│       ├── __init__.py
+│       ├── agent.py
+│       ├── run_manager.py
 │       └── tests/
-│           └── test_story_agent.py  # 16 unit tests
-└── data/
-    └── outputs/                     # Generated artefacts
+│
+├── mcp/tools/audio_tools/
+│   ├── __init__.py
+│   ├── voice_mapper.py               # Voice mapping
+│   ├── tts_tool.py                  # TTS engine
+│   ├── bgm_tool.py                  # Freesound integration
+│   ├── scene_mood_analyzer.py       # Mood analysis
+│   └── audio_composer.py            # Audio mixing
+│
+├── data/
+│   ├── outputs/
+│   │   ├── Phase1/                   # Phase 1 outputs (when ready)
+│   │   │   ├── scene_manifest_auto.json
+│   │   │   └── character_db_auto.json
+│   │   │
+│   │   ├── Phase2/                   # Phase 2 outputs ✅
+│   │   │   ├── run_01/
+│   │   │   ├── run_02/
+│   │   │   └── ...
+│   │   │
+│   │   └── Phase3/                   # Phase 3 outputs ✅
+│   │       ├── run_01/
+│   │       ├── run_02/
+│   │       └── ...
+│   │
+│   ├── bgm_library/                  # Local BGM fallback
+│   │   └── neutral_ambient.mp3
+│   │
+│   └── cache/
+│       └── scene_mood_cache.json     # Mood analysis cache
+│
+├── scripts/
+│   └── test_phase2.py               # Phase 2 test script
+│
+├── shared/
+│   ├── schemas/
+│   ├── utils/
+│   └── constants/
+│
+└── docs/
+    └── requirements/                # Project requirements
 ```
+
+---
+
+## 🔄 Data Flow
+
+```
+Phase 1 JSON Outputs
+├── scene_manifest.json
+│   └── scenes[] {scene_id, location, dialogue[]{speaker, line}}
+└── character_db.json
+    └── characters[] {name, role, personality}
+         ↓
+Phase 2 Processing
+├─→ Voice Mapper: character → unique voice
+├─→ TTS: dialogue → MP3 files (scene01/, scene02/, ...)
+├─→ Mood Analyzer: scene → "3-word bgm query"
+├─→ Freesound: query → ambient audio download
+├─→ Composer: voice + BGM → per-scene composition
+└─→ Concatenator: scenes → master_audio_track.mp3
+         ↓
+Phase 2 JSON Outputs
+├── timing_manifest.json (millisecond A/V sync)
+├── bgm_metadata.json (Freesound details per scene)
+├── phase2_summary.json (execution report)
+├── audio/scene01/*.mp3 (individual dialogue files)
+└── master_audio_track.mp3 (final concatenated audio)
+         ↓
+Phase 3 Processing
+├─→ Image Gen: JSON + HF API → dialogue images
+├─→ Animator: images → Ken Burns video clips
+└─→ Compositor: clips + Phase 2 master audio → final video
+         ↓
+Phase 3 Outputs
+├── final_output.mp4 (Fully composed short film)
+├── phase3_output.json (Execution report)
+└── phase3_video_handoff.json (Phase 4 Dashboard ready)
+```
+
+---
+
+## 🔗 Detailed Documentation
+
+- [Phase 2 Full Technical Implementation](agents/audio_agent/PHASE2_IMPLEMENTATION.md)
+- [Project Requirements](docs/Requirements/)
+
+---
+
+## 📝 Phase 1: Story & Script (Future)
+
+Placeholder for Phase 1 implementation details.
