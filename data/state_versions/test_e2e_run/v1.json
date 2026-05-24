@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "run_id": "test_e2e_run",
+  "phase": "phase2",
+  "timestamp": "2026-05-06T11:27:12.736743+00:00",
+  "description": "Phase 2 complete \u2014 0 audio files",
+  "summary_path": null,
+  "asset_paths": [
+    "data\\outputs\\Phase2\\test_e2e_run\\master_audio_track.mp3",
+    "data\\outputs\\Phase2\\test_e2e_run\\timing_manifest.json"
+  ]
+}
