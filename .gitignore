@@ -20,6 +20,17 @@ data/outputs/*.mp4
 data/outputs/audio/
 data/temp/
 data/state_versions/
+data/outputs/
+
+# All generated pipeline outputs — use data/runs/ going forward
+data/outputs/Phase2/
+data/outputs/Phase3/
+
+# New-style unified run folders (generated, not source)
+data/runs/
+
+# Audio/TTS/BGM cache (regeneratable)
+data/cache/
 
 # Keep output JSON schema files
 !data/outputs/*.json
@@ -46,5 +57,3 @@ models/
 
 # macOS
 .DS_Store
-
-data/outputs/
