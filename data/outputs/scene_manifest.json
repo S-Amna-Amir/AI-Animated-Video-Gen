@@ -1,0 +1,115 @@
+{
+  "title": "Turbulent Flight",
+  "genre": "Drama",
+  "total_scenes": 5,
+  "scenes": [
+    {
+      "scene_id": 1,
+      "location": "INT. PLANE COCKPIT - DAY",
+      "characters": [
+        "Owais",
+        "Areeba"
+      ],
+      "action_description": "Owais is focused on flying the plane while Areeba checks the cabin",
+      "dialogue": [
+        {
+          "speaker": "Owais",
+          "line": "Everything looks good so far, let's hope it stays that way",
+          "visual_cue": "Medium shot of Owais with a soft, natural light emphasizing his focused expression"
+        },
+        {
+          "speaker": "Areeba",
+          "line": "I've got an eye on the cabin, but we do have some... unusual passengers",
+          "visual_cue": "Close-up of Areeba with a slight smile and a warm, golden lighting"
+        }
+      ]
+    },
+    {
+      "scene_id": 2,
+      "location": "INT. PLANE CABIN - DAY",
+      "characters": [
+        "Tom",
+        "Jerry",
+        "Areeba"
+      ],
+      "action_description": "Tom and Jerry are causing chaos in the cabin, with Areeba trying to intervene",
+      "dialogue": [
+        {
+          "speaker": "Areeba",
+          "line": "Okay, okay, let's keep it down back here, we don't want any problems",
+          "visual_cue": "Wide shot of the cabin with Areeba standing in the aisle, a bright, overhead light highlighting the chaos"
+        },
+        {
+          "speaker": "Tom",
+          "line": "Meow, I'm just trying to get comfortable",
+          "visual_cue": "Medium shot of Tom with a sarcastic expression, a muted, cool light tone"
+        }
+      ]
+    },
+    {
+      "scene_id": 3,
+      "location": "INT. PLANE COCKPIT - DAY",
+      "characters": [
+        "Owais",
+        "Areeba"
+      ],
+      "action_description": "Owais is getting worried about the plane's stability, Areeba informs him about Tom and Jerry",
+      "dialogue": [
+        {
+          "speaker": "Owais",
+          "line": "We're experiencing some turbulence, I need you to make sure everyone is buckled in",
+          "visual_cue": "Close-up of Owais with a concerned expression, a sharp, high-contrast light emphasizing his worry"
+        },
+        {
+          "speaker": "Areeba",
+          "line": "It's not just the turbulence, Owais, we have Tom and Jerry causing trouble in the cabin",
+          "visual_cue": "Medium shot of Areeba with a serious expression, a dim, blue-ish light tone"
+        }
+      ]
+    },
+    {
+      "scene_id": 4,
+      "location": "INT. PLANE CABIN - DAY",
+      "characters": [
+        "Tom",
+        "Jerry",
+        "Areeba",
+        "Owais"
+      ],
+      "action_description": "Owais enters the cabin to try and calm Tom and Jerry down, while Areeba assists him",
+      "dialogue": [
+        {
+          "speaker": "Owais",
+          "line": "Alright, let's get everyone settled down, we don't want any accidents",
+          "visual_cue": "Wide shot of the cabin with Owais standing in the aisle, a warm, natural light highlighting the scene"
+        },
+        {
+          "speaker": "Jerry",
+          "line": "Squeak, squeak, we're just trying to have some fun",
+          "visual_cue": "Close-up of Jerry with a mischievous expression, a bright, colorful light tone"
+        }
+      ]
+    },
+    {
+      "scene_id": 5,
+      "location": "INT. PLANE COCKPIT - DAY",
+      "characters": [
+        "Owais",
+        "Areeba"
+      ],
+      "action_description": "The plane lands safely, Owais and Areeba breathe a sigh of relief",
+      "dialogue": [
+        {
+          "speaker": "Owais",
+          "line": "Well, that was a close call, but we made it",
+          "visual_cue": "Medium shot of Owais with a relieved expression, a soft, warm light emphasizing his exhaustion"
+        },
+        {
+          "speaker": "Areeba",
+          "line": "Thanks to you, Owais, we got through that safely",
+          "visual_cue": "Close-up of Areeba with a grateful expression, a gentle, golden lighting"
+        }
+      ]
+    }
+  ]
+}

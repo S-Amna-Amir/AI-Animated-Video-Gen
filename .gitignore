@@ -1,0 +1,49 @@
+# Environment
+.env
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# Outputs (large generated files)
+data/outputs/images/*.png
+data/outputs/*.mp4
+data/outputs/audio/
+data/temp/
+data/state_versions/
+
+# Keep output JSON schema files
+!data/outputs/*.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Models / checkpoints (large binaries)
+checkpoints/
+models/
+*.pth
+*.safetensors
+*.ckpt
+
+# Logs
+*.log
+
+# macOS
+.DS_Store

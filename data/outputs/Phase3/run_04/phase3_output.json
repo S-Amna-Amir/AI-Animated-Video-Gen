@@ -1,0 +1,21 @@
+{
+  "run_id": "run_04",
+  "status": "success",
+  "phase": 3,
+  "input": {
+    "phase1_dir": "data/outputs",
+    "phase2_run_dir": "data\\outputs\\Phase2\\run_04"
+  },
+  "scene_images": {
+    "1_0": "data\\outputs\\Phase3\\run_04\\images\\scene_1_line_0.png"
+  },
+  "scene_clips": {
+    "1_0": "data\\outputs\\Phase3\\run_04\\clips\\scene_1_line_0.mp4"
+  },
+  "final_video": "data\\outputs\\Phase3\\run_04\\final_output_captioned.mp4",
+  "total_duration_seconds": 6.07,
+  "scene_count": 1,
+  "images_generated": 1,
+  "errors": [],
+  "timestamp": "2026-06-14T15:11:29.813556"
+}

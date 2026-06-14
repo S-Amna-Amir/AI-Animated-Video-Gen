@@ -1,0 +1,37 @@
+{
+  "run_id": "run_02",
+  "status": "success",
+  "phase": 3,
+  "input": {
+    "phase1_dir": "data/outputs",
+    "phase2_run_dir": "data\\outputs\\Phase2\\run_02"
+  },
+  "scene_images": {
+    "1_0": "data\\outputs\\Phase3\\run_02\\images\\scene_1_line_0.png",
+    "1_1": "data\\outputs\\Phase3\\run_02\\images\\scene_1_line_1.png",
+    "2_2": "data\\outputs\\Phase3\\run_02\\images\\scene_2_line_2.png",
+    "2_3": "data\\outputs\\Phase3\\run_02\\images\\scene_2_line_3.png",
+    "3_4": "data\\outputs\\Phase3\\run_02\\images\\scene_3_line_4.png",
+    "3_5": "data\\outputs\\Phase3\\run_02\\images\\scene_3_line_5.png",
+    "4_6": "data\\outputs\\Phase3\\run_02\\images\\scene_4_line_6.png",
+    "5_7": "data\\outputs\\Phase3\\run_02\\images\\scene_5_line_7.png",
+    "5_8": "data\\outputs\\Phase3\\run_02\\images\\scene_5_line_8.png"
+  },
+  "scene_clips": {
+    "1_0": "data\\outputs\\Phase3\\run_02\\clips\\scene_1_line_0.mp4",
+    "1_1": "data\\outputs\\Phase3\\run_02\\clips\\scene_1_line_1.mp4",
+    "2_2": "data\\outputs\\Phase3\\run_02\\clips\\scene_2_line_2.mp4",
+    "2_3": "data\\outputs\\Phase3\\run_02\\clips\\scene_2_line_3.mp4",
+    "3_4": "data\\outputs\\Phase3\\run_02\\clips\\scene_3_line_4.mp4",
+    "3_5": "data\\outputs\\Phase3\\run_02\\clips\\scene_3_line_5.mp4",
+    "4_6": "data\\outputs\\Phase3\\run_02\\clips\\scene_4_line_6.mp4",
+    "5_7": "data\\outputs\\Phase3\\run_02\\clips\\scene_5_line_7.mp4",
+    "5_8": "data\\outputs\\Phase3\\run_02\\clips\\scene_5_line_8.mp4"
+  },
+  "final_video": "data\\outputs\\Phase3\\run_02\\final_output_captioned.mp4",
+  "total_duration_seconds": 26.709,
+  "scene_count": 5,
+  "images_generated": 9,
+  "errors": [],
+  "timestamp": "2026-05-30T16:42:27.369255"
+}

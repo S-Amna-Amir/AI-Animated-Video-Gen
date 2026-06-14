@@ -1,0 +1,12 @@
+{
+  "name": "project-montage-frontend",
+  "version": "1.0.0",
+  "description": "Single-file React frontend — no build step needed in dev",
+  "scripts": {
+    "dev": "echo 'No build needed. Open frontend/dist/index.html or run the FastAPI server.'"
+  },
+  "notes": {
+    "dev": "The frontend/dist/index.html loads React from CDN. FastAPI serves it at http://localhost:8000.",
+    "production": "Replace CDN links with local bundles if deploying without internet access."
+  }
+}
