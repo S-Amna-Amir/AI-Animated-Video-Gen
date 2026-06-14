@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Project Montage</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:#0f0f13;color:#e2e2e8;min-height:100vh}
+  :root{--accent:#7c6af7;--accent2:#a78bfa;--bg:#0f0f13;--surface:#1a1a24;--surface2:#23232f;--border:#2e2e3e;--success:#34d399;--error:#f87171;--warn:#fbbf24;--text:#e2e2e8;--muted:#8b8ba0}
+  a{color:var(--accent2);text-decoration:none}
+  button{cursor:pointer;border:none;outline:none;font-family:inherit}
+
+  .app{display:flex;flex-direction:column;min-height:100vh}
+  .header{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 32px;display:flex;align-items:center;gap:16px}
+  .header h1{font-size:1.25rem;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .header .subtitle{color:var(--muted);font-size:.85rem}
+
+  .main{display:flex;flex:1;gap:0}
+  .sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);padding:12px 0;flex-shrink:0}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;cursor:pointer;font-size:.9rem;color:var(--muted);transition:all .15s;border-left:3px solid transparent}
+  .nav-item:hover{background:var(--surface2);color:var(--text)}
+  .nav-item.active{background:var(--surface2);color:var(--accent2);border-left-color:var(--accent)}
+  .nav-badge{margin-left:auto;background:var(--accent);color:#fff;font-size:.7rem;padding:2px 7px;border-radius:99px}
+
+  .content{flex:1;padding:28px 32px;overflow-y:auto;max-width:960px}
+  .page-title{font-size:1.4rem;font-weight:700;margin-bottom:4px}
+  .page-sub{color:var(--muted);font-size:.88rem;margin-bottom:24px}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:16px}
+  .card h3{font-size:1rem;font-weight:600;margin-bottom:14px;color:var(--text)}
+
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:.82rem;color:var(--muted);margin-bottom:5px;font-weight:500;text-transform:uppercase;letter-spacing:.04em}
+  .field input,.field textarea,.field select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--text);font-family:inherit;font-size:.9rem;transition:border .15s}
+  .field input:focus,.field textarea:focus,.field select:focus{border-color:var(--accent);outline:none}
+  .field textarea{resize:vertical;min-height:80px}
+  .toggle-group{display:flex;gap:8px}
+  .toggle-btn{flex:1;padding:8px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:.88rem;transition:all .15s}
+  .toggle-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+
+  .btn{padding:10px 20px;border-radius:7px;font-size:.9rem;font-weight:600;transition:all .15s;display:inline-flex;align-items:center;gap:7px}
+  .btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{filter:brightness(1.15)}
+  .btn-secondary{background:var(--surface2);border:1px solid var(--border);color:var(--text)}.btn-secondary:hover{border-color:var(--accent)}
+  .btn-danger{background:#7f1d1d;color:#fca5a5;border:1px solid #ef4444}.btn-danger:hover{background:#991b1b}
+  .btn:disabled{opacity:.45;cursor:not-allowed;filter:none}
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+
+  .status-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;font-size:.78rem;font-weight:600}
+  .status-queued{background:#1c1c2e;color:#8b8ba0;border:1px solid #2e2e3e}
+  .status-running{background:#1a1a00;color:#fbbf24;border:1px solid #854d0e}
+  .status-complete{background:#052e16;color:#34d399;border:1px solid #166534}
+  .status-failed{background:#2d0a0a;color:#f87171;border:1px solid #7f1d1d}
+
+  .log-box{background:#0a0a0f;border:1px solid var(--border);border-radius:7px;padding:12px 14px;font-family:'Cascadia Code','Fira Code',monospace;font-size:.78rem;max-height:260px;overflow-y:auto;line-height:1.6;color:#a0a0b8}
+  .log-box .log-line{color:#c8c8d8}.log-box .log-err{color:var(--error)}.log-box .log-ok{color:var(--success)}
+
+  .progress-bar{height:5px;background:var(--surface2);border-radius:99px;overflow:hidden;margin:10px 0}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:99px;transition:width .4s}
+
+  .result-box{background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:14px;margin-top:12px}
+  .result-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:.87rem}
+  .result-row:last-child{border:none}
+  .result-key{color:var(--muted)}
+  .result-val{color:var(--text);font-weight:500;text-align:right;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  .run-list{display:flex;flex-direction:column;gap:8px}
+  .run-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border .15s}
+  .run-card:hover{border-color:var(--accent)}
+  .run-card .run-id{font-weight:700;font-size:.9rem}
+  .run-card .run-meta{color:var(--muted);font-size:.8rem;margin-top:2px}
+  .run-card .run-actions{margin-left:auto;display:flex;gap:8px}
+
+  .video-player{width:100%;border-radius:8px;border:1px solid var(--border);background:#000;max-height:420px}
+  .char-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-top:12px}
+  .char-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center}
+  .char-img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;background:var(--border);margin-bottom:8px}
+  .char-name{font-weight:700;font-size:.88rem}
+  .char-role{color:var(--muted);font-size:.78rem;margin-top:2px}
+
+  .dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+  .dot-running{background:var(--warn);animation:pulse 1s infinite}
+  .dot-complete{background:var(--success)}
+  .dot-failed{background:var(--error)}
+  .dot-queued{background:var(--muted)}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+  .empty{color:var(--muted);font-size:.9rem;padding:32px;text-align:center;border:1px dashed var(--border);border-radius:8px}
+  .divider{border:none;border-top:1px solid var(--border);margin:20px 0}
+  .tag{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:.75rem;color:var(--muted)}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState, useEffect, useRef, useCallback} = React;
+const API = '';  // same origin
+
+// ── API helpers ───────────────────────────────────────────────────────────────
+async function api(path, opts={}) {
+  const r = await fetch(API + path, {headers:{'Content-Type':'application/json'}, ...opts});
+  if (!r.ok) { const t = await r.text(); throw new Error(t); }
+  return r.json();
+}
+const post = (path, body) => api(path, {method:'POST', body:JSON.stringify(body)});
+
+// ── Status pill ───────────────────────────────────────────────────────────────
+function StatusPill({status}) {
+  const dot = {running:'dot-running',complete:'dot-complete',failed:'dot-failed',queued:'dot-queued'}[status]||'dot-queued';
+  return <span className={`status-pill status-${status||'queued'}`}><span className={`dot ${dot}`}/>{status||'idle'}</span>;
+}
+
+// ── Log box ───────────────────────────────────────────────────────────────────
+function LogBox({logs=[]}) {
+  const ref = useRef();
+  useEffect(()=>{ if(ref.current) ref.current.scrollTop = ref.current.scrollHeight; },[logs]);
+  if(!logs.length) return <div className="log-box" ref={ref}><span style={{color:'#555'}}>Waiting for logs…</span></div>;
+  return (
+    <div className="log-box" ref={ref}>
+      {logs.map((l,i)=>{
+        const cls = l.includes('ERROR')||l.includes('FAILED') ? 'log-err' : l.includes('✓')||l.includes('complete') ? 'log-ok' : 'log-line';
+        return <div key={i} className={cls}>{l}</div>;
+      })}
+    </div>
+  );
+}
+
+// ── Job runner hook ───────────────────────────────────────────────────────────
+function useJob() {
+  const [job, setJob] = useState(null);
+  const wsRef = useRef(null);
+
+  const start = useCallback(async (endpoint, body) => {
+    if(wsRef.current) wsRef.current.close();
+    setJob({status:'queued', logs:[], result:null, error:null});
+    try {
+      const res = await post(endpoint, body);
+      const jobId = res.job_id;
+      const ws = new WebSocket(`ws://${location.host}/api/pipeline/ws/${jobId}`);
+      wsRef.current = ws;
+      ws.onmessage = (e) => {
+        const d = JSON.parse(e.data);
+        if(d.log) setJob(j=>({...j, logs:[...(j?.logs||[]), d.log]}));
+        if(d.status) setJob(j=>({...j, status:d.status, result:d.result}));
+        if(d.error)  setJob(j=>({...j, status:'failed', error:d.error}));
+      };
+      ws.onerror = () => setJob(j=>({...j, status:'failed', error:'WebSocket error'}));
+      setJob(j=>({...j, status:'running', job_id:jobId}));
+    } catch(e) {
+      setJob({status:'failed', logs:[], error:e.message, result:null});
+    }
+  }, []);
+
+  return {job, start};
+}
+
+// ── Phase 1 page ──────────────────────────────────────────────────────────────
+function Phase1Page() {
+  const [mode, setMode] = useState('auto');
+  const [input, setInput] = useState('');
+  // step: 'idle' | 'generating' | 'review' | 'resuming' | 'done' | 'failed'
+  const [step, setStep] = useState('idle');
+  const [jobId, setJobId] = useState(null);
+  const [logs, setLogs] = useState([]);
+  const [script, setScript] = useState(null);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState(null);
+  const [hitlEdit, setHitlEdit] = useState('');
+  const [characters, setCharacters] = useState([]);
+  const wsRef = useRef(null);
+
+  // Reload characters after completion
+  useEffect(() => {
+    if (step === 'done') {
+      api('/api/files/character-db')
+        .then(d => setCharacters(Array.isArray(d) ? d : d.characters || []))
+        .catch(() => {});
+    }
+  }, [step]);
+
+  const openWs = (jid, onPendingHitl) => {
+    if (wsRef.current) wsRef.current.close();
+    const ws = new WebSocket(`ws://${location.host}/api/pipeline/ws/${jid}`);
+    wsRef.current = ws;
+    ws.onmessage = (e) => {
+      const d = JSON.parse(e.data);
+      if (d.log) setLogs(prev => [...prev, d.log]);
+      if (d.status === 'pending_hitl') {
+        setScript(d.script || null);
+        onPendingHitl();
+      }
+      if (d.status === 'complete') { setResult(d.result); setStep('done'); }
+      if (d.status === 'failed')   { setError(d.error || 'Pipeline failed'); setStep('failed'); }
+    };
+    ws.onerror = () => { setError('WebSocket error'); setStep('failed'); };
+  };
+
+  const runGenerate = async () => {
+    if (!input.trim()) return;
+    setStep('generating'); setLogs([]); setScript(null);
+    setResult(null); setError(null); setHitlEdit('');
+    try {
+      const res = await post('/api/pipeline/phase1/generate', { mode, raw_input: input });
+      setJobId(res.job_id);
+      openWs(res.job_id, () => setStep('review'));
+    } catch (e) {
+      setError(e.message); setStep('failed');
+    }
+  };
+
+  const submitDecision = async (decision) => {
+    if (decision === 'edit' && !hitlEdit.trim()) {
+      alert('Paste the corrected JSON first.'); return;
+    }
+    let parsed_edit = undefined;
+    if (decision === 'edit') {
+      try { parsed_edit = JSON.parse(hitlEdit); }
+      catch { alert('Invalid JSON — check the edit payload.'); return; }
+    }
+    setStep('resuming');
+    try {
+      await post('/api/pipeline/phase1/resume', {
+        job_id: jobId, hitl_decision: decision, hitl_edit: parsed_edit,
+      });
+      // WS is already open and will fire the complete/failed events
+    } catch (e) {
+      setError(e.message); setStep('failed');
+    }
+  };
+
+  const reset = () => {
+    if (wsRef.current) wsRef.current.close();
+    setStep('idle'); setLogs([]); setScript(null);
+    setResult(null); setError(null); setJobId(null);
+  };
+
+  // ── Render helpers ──────────────────────────────────────────────────────────
+
+  const ScriptReview = () => {
+    if (!script) return null;
+    return (
+      <div className="card" style={{borderColor:'var(--accent)'}}>
+        <h3 style={{display:'flex',alignItems:'center',gap:10}}>
+          <span>🎬 Script ready for review</span>
+          <StatusPill status="pending_hitl"/>
+        </h3>
+
+        {/* Script summary */}
+        <div className="result-box" style={{marginBottom:14}}>
+          {[['Title', script.title||'Untitled'],['Genre', script.genre||'—'],['Scenes', script.total_scenes||0]]
+            .map(([k,v]) => (
+              <div key={k} className="result-row">
+                <span className="result-key">{k}</span>
+                <span className="result-val">{String(v)}</span>
+              </div>
+            ))}
+        </div>
+
+        {/* Scene list */}
+        <div style={{maxHeight:320,overflowY:'auto',marginBottom:16}}>
+          {(script.scenes||[]).map((sc, i) => (
+            <div key={i} style={{
+              background:'var(--surface2)',border:'1px solid var(--border)',
+              borderRadius:7,padding:'12px 14px',marginBottom:8
+            }}>
+              <div style={{fontWeight:700,marginBottom:4,fontSize:'.88rem'}}>
+                Scene {sc.scene_id} — {sc.location}
+              </div>
+              {sc.characters?.length > 0 && (
+                <div style={{color:'var(--muted)',fontSize:'.78rem',marginBottom:6}}>
+                  Characters: {sc.characters.join(', ')}
+                </div>
+              )}
+              <div style={{color:'var(--text)',fontSize:'.82rem',marginBottom:8,lineHeight:1.5}}>
+                {sc.action_description?.slice(0,180)}{sc.action_description?.length>180?'…':''}
+              </div>
+              {(sc.dialogue||[]).slice(0,2).map((dl, j) => (
+                <div key={j} style={{
+                  borderLeft:'2px solid var(--accent)',paddingLeft:8,
+                  marginBottom:4,fontSize:'.8rem',color:'var(--muted)'
+                }}>
+                  <strong style={{color:'var(--text)'}}>{dl.speaker}:</strong> "{dl.line}"
+                </div>
+              ))}
+              {sc.dialogue?.length > 2 && (
+                <div style={{color:'var(--muted)',fontSize:'.75rem'}}>
+                  +{sc.dialogue.length - 2} more lines…
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Edit JSON field */}
+        <div className="field" style={{marginBottom:14}}>
+          <label>Edit script JSON (optional — paste corrected JSON to submit with "Apply edit")</label>
+          <textarea
+            value={hitlEdit}
+            onChange={e => setHitlEdit(e.target.value)}
+            rows={4}
+            placeholder='{"title":"…","scenes":[…]}'
+            style={{fontFamily:'monospace',fontSize:'.8rem'}}
+          />
+        </div>
+
+        {/* Decision buttons */}
+        <div className="btn-row">
+          <button className="btn btn-primary" onClick={() => submitDecision('yes')}>
+            ✅ Approve & continue
+          </button>
+          <button
+            className="btn btn-secondary"
+            onClick={() => submitDecision('edit')}
+            disabled={!hitlEdit.trim()}
+          >
+            ✏️ Apply edit & continue
+          </button>
+          <button className="btn btn-danger" onClick={() => submitDecision('no')}>
+            ❌ Reject
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  // ── Main render ─────────────────────────────────────────────────────────────
+  return (
+    <div>
+      <div className="page-title">Phase 1 — Story & Script</div>
+      <div className="page-sub">Generate a screenplay from a prompt, or upload your own.</div>
+
+      {/* Input card — hidden once generation starts */}
+      {step === 'idle' && (
+        <div className="card">
+          <h3>Input</h3>
+          <div className="field">
+            <label>Mode</label>
+            <div className="toggle-group">
+              {['auto','manual'].map(m => (
+                <button key={m} className={`toggle-btn ${mode===m?'active':''}`} onClick={() => setMode(m)}>
+                  {m==='auto'?'🤖 Generate from prompt':'📄 Upload screenplay'}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="field">
+            <label>{mode==='auto'?'Story Prompt':'Screenplay Text'}</label>
+            <textarea
+              value={input} onChange={e => setInput(e.target.value)}
+              rows={mode==='auto'?3:8}
+              placeholder={mode==='auto'
+                ? 'e.g. A spy thriller set in 1960s Berlin…'
+                : 'Paste your screenplay here (INT./EXT. headings required)'}
+            />
+          </div>
+          <div className="btn-row">
+            <button className="btn btn-primary" onClick={runGenerate} disabled={!input.trim()}>
+              ▶ Generate script
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Generation progress */}
+      {(step === 'generating' || step === 'review' || step === 'resuming') && (
+        <div className="card">
+          <h3>
+            {step === 'generating' && 'Generating script…'}
+            {step === 'review'     && 'Review generated script'}
+            {step === 'resuming'   && 'Running pipeline…'}
+            &nbsp;<StatusPill status={step === 'review' ? 'pending_hitl' : 'running'}/>
+          </h3>
+          <LogBox logs={logs}/>
+        </div>
+      )}
+
+      {/* HITL review panel */}
+      {step === 'review' && <ScriptReview/>}
+
+      {/* Final result */}
+      {step === 'done' && (
+        <div className="card">
+          <h3>Phase 1 complete <StatusPill status="complete"/></h3>
+          {result && (
+            <div className="result-box">
+              {Object.entries(result).map(([k,v]) => (
+                <div key={k} className="result-row">
+                  <span className="result-key">{k}</span>
+                  <span className="result-val">{String(v)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="btn-row" style={{marginTop:14}}>
+            <button className="btn btn-secondary" onClick={reset}>↩ Run again</button>
+          </div>
+        </div>
+      )}
+
+      {/* Error */}
+      {step === 'failed' && (
+        <div className="card" style={{borderColor:'var(--error)'}}>
+          <h3>Failed <StatusPill status="failed"/></h3>
+          {logs.length > 0 && <LogBox logs={logs}/>}
+          <div style={{color:'var(--error)',marginTop:8,fontSize:'.85rem'}}>{error}</div>
+          <div className="btn-row" style={{marginTop:14}}>
+            <button className="btn btn-secondary" onClick={reset}>↩ Try again</button>
+          </div>
+        </div>
+      )}
+
+      {/* Characters (shown after completion) — images from Phase 3 */}
+      {characters.length > 0 && (
+        <div className="card">
+          <h3>Characters ({characters.length})</h3>
+          <div style={{color:'var(--muted)',fontSize:'.82rem',marginBottom:12}}>
+            Character images are generated in Phase 3. Complete Phase 3 to see rendered portraits.
+          </div>
+          <div className="char-grid">
+            {characters.map((c,i) => (
+              <div key={i} className="char-card">
+                <div className="char-img" style={{display:'flex',alignItems:'center',justifyContent:'center',fontSize:'2rem',background:'var(--border)'}}>
+                  📸
+                </div>
+                <div className="char-name">{c.name}</div>
+                <div className="char-role">{c.personality?.split(',')[0]||'Character'}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Phase 2 page ──────────────────────────────────────────────────────────────
+function Phase2Page() {
+  const [phase1Dir, setPhase1Dir] = useState('data/outputs');
+  const {job, start} = useJob();
+
+  const run = () => start('/api/pipeline/phase2', {
+    phase1_dir: phase1Dir,
+    phase2_dir: 'data/outputs/Phase2',
+  });
+
+  return (
+    <div>
+      <div className="page-title">Phase 2 — Audio Generation</div>
+      <div className="page-sub">Synthesise dialogue with Edge-TTS and layer background music via Freesound.</div>
+      <div className="card">
+        <h3>Configuration</h3>
+        <div className="field">
+          <label>Phase 1 Output Directory</label>
+          <input value={phase1Dir} onChange={e=>setPhase1Dir(e.target.value)}/>
+        </div>
+        <div className="btn-row">
+          <button className="btn btn-primary" onClick={run} disabled={job?.status==='running'}>
+            {job?.status==='running'?'⏳ Running…':'▶ Run Phase 2'}
+          </button>
+        </div>
+      </div>
+      {job && (
+        <div className="card">
+          <h3>Progress <StatusPill status={job.status}/></h3>
+          <LogBox logs={job.logs}/>
+          {job.result && (
+            <div className="result-box">
+              {Object.entries(job.result).map(([k,v])=>(
+                <div key={k} className="result-row"><span className="result-key">{k}</span><span className="result-val">{String(v)}</span></div>
+              ))}
+              {job.result.run_id && job.result.master_audio && (
+                <div style={{marginTop:12}}>
+                  <audio controls style={{width:'100%'}} src={`/api/files/audio/${job.result.run_id}`}/>
+                </div>
+              )}
+            </div>
+          )}
+          {job.error && <div style={{color:'var(--error)',marginTop:8,fontSize:'.85rem'}}>Error: {job.error}</div>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Phase 3 page ──────────────────────────────────────────────────────────────
+function Phase3Page() {
+  const [phase1Dir, setPhase1Dir] = useState('data/outputs');
+  const [mock, setMock] = useState(true);
+  const [short, setShort] = useState(true);
+  const [subtitles, setSubtitles] = useState(false);
+  const {job, start} = useJob();
+  const [lipSync, setLipSync] = useState(false);
+
+  const run = () => start(
+    short ? '/api/pipeline/phase3/short' : '/api/pipeline/phase3',
+    {phase1_dir: phase1Dir, mock, use_subtitles: subtitles, short_mode: short, use_lip_sync: lipSync}
+  );
+
+  return (
+    <div>
+      <div className="page-title">Phase 3 — Video Generation</div>
+      <div className="page-sub">Generate scene images, animate with Ken Burns effect, compose final MP4.</div>
+      <div className="card">
+        <h3>Configuration</h3>
+        <div className="field">
+          <label>Phase 1 Output Directory</label>
+          <input value={phase1Dir} onChange={e=>setPhase1Dir(e.target.value)}/>
+        </div>
+        <div className="field">
+          <label>Options</label>
+          <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
+            {[['mock','🖼 Mock images (no HF API)',mock,setMock],
+              ['short','⚡ Short mode (1 scene)',short,setShort],
+              ['subs','💬 Burn subtitles',subtitles,setSubtitles],
+              ['lipsync',  '👄 Lip sync (Wav2Lip)',lipSync,setLipSync],
+            ].map(([k,label,val,setter])=>(
+              <button key={k} className={`toggle-btn ${val?'active':''}`} style={{flex:'0 0 auto',padding:'8px 14px'}} onClick={()=>setter(v=>!v)}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="btn-row">
+          <button className="btn btn-primary" onClick={run} disabled={job?.status==='running'}>
+            {job?.status==='running'?'⏳ Running…':'▶ Run Phase 3'}
+          </button>
+        </div>
+      </div>
+      {job && (
+        <div className="card">
+          <h3>Progress <StatusPill status={job.status}/></h3>
+          <LogBox logs={job.logs}/>
+          {job.result?.final_video && (
+            <div style={{marginTop:14}}>
+              <video className="video-player" controls src={job.result.use_subtitles
+          ? `/api/files/video/${job.result.run_id}/captioned`
+          : `/api/files/video/${job.result.run_id}`}/>
+              <div className="btn-row" style={{marginTop:10}}>
+                <a href={job.result.use_subtitles
+                  ? `/api/files/video/${job.result.run_id}/captioned`
+                  : `/api/files/video/${job.result.run_id}`} download>
+                  <button className="btn btn-secondary">⬇ Download Video</button>
+                </a>
+              </div>
+            </div>
+          )}
+          {job.error && <div style={{color:'var(--error)',marginTop:8,fontSize:'.85rem'}}>Error: {job.error}</div>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Runs page ─────────────────────────────────────────────────────────────────
+function RunsPage() {
+  const [phase, setPhase] = useState(3);
+  const [runs, setRuns] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const data = await api(`/api/runs/phase${phase}`);
+      setRuns(data.runs||[]);
+    } catch(e) { setRuns([]); }
+    setLoading(false);
+  };
+
+  useEffect(()=>{ load(); setSelected(null); },[phase]);
+
+  const loadDetail = async (run) => {
+    try {
+      const data = await api(`/api/runs/phase${phase}/${run.run_id}`);
+      setSelected(data);
+    } catch(e) {}
+  };
+
+  return (
+    <div>
+      <div className="page-title">Run History</div>
+      <div className="page-sub">Browse completed pipeline runs.</div>
+      <div className="card">
+        <div className="toggle-group" style={{maxWidth:300}}>
+          {[2,3].map(p=>(
+            <button key={p} className={`toggle-btn ${phase===p?'active':''}`} onClick={()=>setPhase(p)}>
+              Phase {p}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:selected?'1fr 1fr':'1fr',gap:16}}>
+        <div>
+          {loading && <div className="empty">Loading…</div>}
+          {!loading && runs.length===0 && <div className="empty">No Phase {phase} runs yet.</div>}
+          <div className="run-list">
+            {runs.map((r,i)=>(
+              <div key={i} className="run-card" onClick={()=>loadDetail(r)}>
+                <div>
+                  <div className="run-id">{r.run_id}</div>
+                  <div className="run-meta">
+                    <StatusPill status={r.summary?.status||'unknown'}/>&nbsp;
+                    {r.summary?.timestamp && new Date(r.summary.timestamp).toLocaleString()}
+                  </div>
+                </div>
+                {phase===3 && r.summary?.final_video && (
+                  <a href={`/api/files/video/${r.run_id}`} download onClick={e=>e.stopPropagation()}>
+                    <button className="btn btn-secondary" style={{padding:'6px 12px',fontSize:'.78rem'}}>⬇ MP4</button>
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+        {selected && (
+          <div className="card" style={{maxHeight:'70vh',overflowY:'auto'}}>
+            <h3>{selected.run_id}</h3>
+            {phase===3 && selected.output?.final_video && (
+              <div style={{marginBottom:14}}>
+                <video className="video-player" controls src={`/api/files/video/${selected.run_id}`}/>
+              </div>
+            )}
+            {phase===2 && selected.run_id && (
+              <audio controls style={{width:'100%',marginBottom:14}} src={`/api/files/audio/${selected.run_id}`}/>
+            )}
+            <div className="result-box">
+              {Object.entries(phase===2 ? (selected.summary||{}) : (selected.output||{}))
+                .filter(([k])=>!['scenes','scene_images','scene_clips','errors'].includes(k))
+                .map(([k,v])=>(
+                  <div key={k} className="result-row">
+                    <span className="result-key">{k}</span>
+                    <span className="result-val">{typeof v==='object'?JSON.stringify(v).slice(0,60):String(v)}</span>
+                  </div>
+                ))}
+            </div>
+            {selected.output?.errors?.length>0 && (
+              <div style={{marginTop:10}}>
+                <div style={{color:'var(--muted)',fontSize:'.8rem',marginBottom:4}}>Errors</div>
+                {selected.output.errors.map((e,i)=><div key={i} style={{color:'var(--error)',fontSize:'.8rem'}}>{e}</div>)}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Overview page ─────────────────────────────────────────────────────────────
+function OverviewPage({setPage}) {
+  const [p2Latest, setP2Latest] = useState(null);
+  const [p3Latest, setP3Latest] = useState(null);
+
+  useEffect(()=>{
+    api('/api/runs/phase2/latest').then(setP2Latest).catch(()=>{});
+    api('/api/runs/phase3/latest').then(setP3Latest).catch(()=>{});
+  },[]);
+
+  const phases = [
+    {num:1, label:'Story & Script',   icon:'📝', desc:'LLM screenplay generation + character design', page:'phase1'},
+    {num:2, label:'Audio Generation', icon:'🎵', desc:'Edge-TTS dialogue + Freesound BGM', page:'phase2'},
+    {num:3, label:'Video Composition',icon:'🎬', desc:'HF image gen + Ken Burns animation + MP4 export', page:'phase3'},
+    {num:5, label:'Edit & Undo',       icon:'✏️', desc:'Free-text edits with intent classification + version history', page:'phase5'},
+  ];
+
+  return (
+    <div>
+      <div className="page-title">Project Montage</div>
+      <div className="page-sub">AI-powered animated video generation — prompt to polished short film.</div>
+
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(260px,1fr))',gap:14,marginBottom:24}}>
+        {phases.map(p=>(
+          <div key={p.num} className="card" style={{cursor:'pointer'}} onClick={()=>setPage(p.page)}>
+            <div style={{fontSize:'1.8rem',marginBottom:8}}>{p.icon}</div>
+            <div style={{fontWeight:700,marginBottom:4}}>Phase {p.num} — {p.label}</div>
+            <div style={{color:'var(--muted)',fontSize:'.85rem',marginBottom:12}}>{p.desc}</div>
+            <button className="btn btn-primary" style={{fontSize:'.82rem',padding:'7px 14px'}}>Open →</button>
+          </div>
+        ))}
+      </div>
+
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>
+        {p3Latest?.output?.final_video && (
+          <div className="card">
+            <h3>Latest Video</h3>
+            <video className="video-player" controls src={`/api/files/video/${p3Latest.run_id}`} style={{marginTop:8}}/>
+          </div>
+        )}
+        {p2Latest && (
+          <div className="card">
+            <h3>Latest Audio</h3>
+            <audio controls style={{width:'100%',marginTop:8}} src={`/api/files/audio/${p2Latest.run_id}`}/>
+            <div className="result-box" style={{marginTop:10}}>
+              {Object.entries(p2Latest.summary||{})
+                .filter(([k])=>['run_id','scenes_processed','total_scenes','scenes_with_bgm'].includes(k))
+                .map(([k,v])=>(
+                  <div key={k} className="result-row"><span className="result-key">{k}</span><span className="result-val">{String(v)}</span></div>
+                ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
+// ── Phase 5 page ──────────────────────────────────────────────────────────────
+function Phase5Page() {
+  const [query, setQuery] = React.useState('');
+  const [job, setJob] = React.useState(null);
+  const [history, setHistory] = React.useState([]);
+  const [wsRef] = React.useState({current: null});
+
+  const loadHistory = async () => {
+    try {
+      const d = await api('/api/edit/history');
+      setHistory(d.versions || []);
+    } catch(e) {}
+  };
+
+  React.useEffect(() => { loadHistory(); }, [job?.status]);
+
+  const runEdit = async () => {
+    if (!query.trim()) return;
+    if (wsRef.current) wsRef.current.close();
+    setJob({status:'queued', logs:[], result:null});
+    try {
+      const res = await post('/api/edit/apply', {query});
+      const jobId = res.job_id;
+      const ws = new WebSocket('ws://' + location.host + '/api/edit/ws/' + jobId);
+      wsRef.current = ws;
+      ws.onmessage = (e) => {
+        const d = JSON.parse(e.data);
+        if (d.log) setJob(j => ({...j, logs:[...(j?.logs||[]), d.log]}));
+        if (d.status) setJob(j => ({...j, status:d.status, result:d.result}));
+      };
+      ws.onerror = () => setJob(j => ({...j, status:'failed', error:'WebSocket error'}));
+      setJob(j => ({...j, status:'running', job_id:jobId}));
+    } catch(e) {
+      setJob({status:'failed', logs:[], error:e.message});
+    }
+  };
+
+  const doUndo = async (version) => {
+    try {
+      await post('/api/edit/undo/' + version, {version});
+      loadHistory();
+      alert('Reverted to version ' + version);
+    } catch(e) { alert('Revert failed: ' + e.message); }
+  };
+
+  const examples = [
+    'Make the scene darker',
+    'Change voice tone',
+    'Add background music',
+    'Remove the subtitle',
+    'Speed up this scene',
+    'Regenerate the script',
+    'Change character design',
+    'Make scene 2 brighter',
+  ];
+
+  return (
+    <div>
+      <div className="page-title">Phase 5 — Edit Agent</div>
+      <div className="page-sub">Describe edits in plain language. The agent classifies intent, re-runs the right phase, and saves a snapshot for undo.</div>
+
+      <div className="card">
+        <h3>Edit Command</h3>
+        <div className="field">
+          <label>What would you like to change?</label>
+          <textarea value={query} onChange={e=>setQuery(e.target.value)} rows={2}
+            placeholder="e.g. Make the scene darker, Change voice tone for narrator, Regenerate the script…"/>
+        </div>
+        <div style={{marginBottom:12}}>
+          <div style={{color:'var(--muted)',fontSize:'.78rem',marginBottom:6}}>Examples:</div>
+          <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+            {examples.map((ex,i)=>(
+              <button key={i} className="tag" style={{cursor:'pointer',padding:'4px 10px'}}
+                onClick={()=>setQuery(ex)}>{ex}</button>
+            ))}
+          </div>
+        </div>
+        <div className="btn-row">
+          <button className="btn btn-primary" onClick={runEdit} disabled={!query.trim()||job?.status==='running'}>
+            {job?.status==='running'?'⏳ Running…':'✏️ Apply Edit'}
+          </button>
+        </div>
+      </div>
+
+      {job && (
+        <div className="card">
+          <h3>Progress <StatusPill status={job.status}/></h3>
+          <LogBox logs={job.logs}/>
+          {job.result && (
+            <div className="result-box">
+              {job.result.intent && (
+                <div className="result-row">
+                  <span className="result-key">intent</span>
+                  <span className="result-val">{job.result.intent.intent} → {job.result.intent.target}</span>
+                </div>
+              )}
+              <div className="result-row">
+                <span className="result-key">snapshot before</span>
+                <span className="result-val">v{String(job.result.snapshot_before).padStart(3,'0')}</span>
+              </div>
+              <div className="result-row">
+                <span className="result-key">snapshot after</span>
+                <span className="result-val">v{String(job.result.snapshot_after).padStart(3,'0')}</span>
+              </div>
+              <div className="result-row">
+                <span className="result-key">steps completed</span>
+                <span className="result-val">{job.result.steps_completed}</span>
+              </div>
+            </div>
+          )}
+          {job.error && <div style={{color:'var(--error)',marginTop:8,fontSize:'.85rem'}}>Error: {job.error}</div>}
+        </div>
+      )}
+
+      <div className="card">
+        <h3 style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+          Version History
+          <button className="btn btn-secondary" style={{fontSize:'.78rem',padding:'5px 10px'}} onClick={loadHistory}>↻ Refresh</button>
+        </h3>
+        {history.length === 0 && <div className="empty">No snapshots yet. Run any phase to create the first version.</div>}
+        <div className="run-list">
+          {history.map((v,i) => (
+            <div key={i} className="run-card">
+              <div>
+                <div className="run-id">v{String(v.version).padStart(3,'0')}</div>
+                <div className="run-meta">{v.description || '(no description)'}</div>
+                {v.edit_query && <div className="run-meta" style={{marginTop:2,fontStyle:'italic'}}>{v.edit_query}</div>}
+                <div className="run-meta">{new Date(v.timestamp).toLocaleString()} · {v.asset_count} assets</div>
+              </div>
+              <div className="run-actions">
+                <button className="btn btn-danger" style={{fontSize:'.78rem',padding:'6px 12px'}}
+                  onClick={()=>doUndo(v.version)}>↩ Revert</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── App shell ─────────────────────────────────────────────────────────────────
+function App() {
+  const [page, setPage] = useState('overview');
+
+  const nav = [
+    {id:'overview', label:'Overview',      icon:'🏠'},
+    {id:'phase1',   label:'Phase 1',       icon:'📝'},
+    {id:'phase2',   label:'Phase 2',       icon:'🎵'},
+    {id:'phase3',   label:'Phase 3',       icon:'🎬'},
+    {id:'phase5',   label:'Phase 5 — Edit',icon:'✏️'},
+    {id:'runs',     label:'Run History',   icon:'📂'},
+  ];
+
+  const pages = {overview:<OverviewPage setPage={setPage}/>, phase1:<Phase1Page/>, phase2:<Phase2Page/>, phase3:<Phase3Page/>, phase5:<Phase5Page/>, runs:<RunsPage/>};
+
+  return (
+    <div className="app">
+      <div className="header">
+        <div>
+          <h1>Project Montage</h1>
+          <div className="subtitle">AI Video Generation Pipeline</div>
+        </div>
+        <div style={{marginLeft:'auto',display:'flex',gap:8}}>
+          <a href="/docs" target="_blank"><button className="btn btn-secondary" style={{fontSize:'.8rem',padding:'6px 12px'}}>API Docs</button></a>
+        </div>
+      </div>
+      <div className="main">
+        <div className="sidebar">
+          {nav.map(n=>(
+            <div key={n.id} className={`nav-item ${page===n.id?'active':''}`} onClick={()=>setPage(n.id)}>
+              <span>{n.icon}</span><span>{n.label}</span>
+            </div>
+          ))}
+        </div>
+        <div className="content">{pages[page]||pages.overview}</div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
