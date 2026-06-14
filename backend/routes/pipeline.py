@@ -231,10 +231,11 @@ async def _run_phase1_resume(job_id: str, req: Phase1ResumeRequest):
         chars  = state.get("characters", [])
         jobs.log(job_id, f"Characters built : {len(chars)}")
         jobs.set_complete(job_id, result={
-            "title":        script.get("title"),
-            "total_scenes": script.get("total_scenes"),
-            "characters":   len(chars),
-            "output_dir":   "data/outputs",
+            "run_id":         result["run_id"],
+            "final_video":    result.get("final_video"),
+            "use_subtitles":  result.get("use_subtitles", False),
+            "status":         result["status"],
+            "run_dir":        str(Path("data/outputs/Phase3") / result["run_id"]),
         })
         jobs.log(job_id, "Phase 1 complete ✓")
 

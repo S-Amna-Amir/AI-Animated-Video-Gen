@@ -193,12 +193,15 @@ class VideoAgent:
             self.logger.error("Animation failed: %s", e, exc_info=True)
 
         # 4. Video composition
-        final_video_path = str(self.run_dir / "final_output.mp4")
+        final_video_path    = str(self.run_dir / "final_output.mp4")
+        subtitled_video_path = str(self.run_dir / "final_output_captioned.mp4")
+        output_path = subtitled_video_path if use_subtitles else final_video_path
+
         try:
             final_video = video_compositor.compose_final_video(
                 scene_clips_map=scene_clips,
                 dialogue_results=dialogue_results,
-                output_path=final_video_path,
+                output_path=output_path,
                 use_transitions=True,
                 use_subtitles=use_subtitles,
             )
@@ -222,19 +225,22 @@ class VideoAgent:
         else:
             status = "failed"
 
+        # Replace the output dict construction:
         output = {
             "run_id": self.run_id,
             "status": status,
             "phase":  3,
             "input":  {"phase1_dir": phase1_dir, "phase2_run_dir": phase2_run_dir},
-            "scene_images":       scene_images_map,
-            "scene_clips":        scene_clips,
-            "final_video":        final_video or final_video_path,
+            "scene_images":           scene_images_map,
+            "scene_clips":            scene_clips,
+            "final_video":            final_video or final_video_path,
+            "final_video_captioned":  (final_video or subtitled_video_path) if use_subtitles else None,
+            "use_subtitles":          use_subtitles,
             "total_duration_seconds": total_dur_ms / 1000.0,
-            "scene_count":        len(unique_sids),
-            "images_generated":   len(scene_images_map),
-            "errors":             errors,
-            "timestamp":          datetime.now().isoformat(),
+            "scene_count":            len(unique_sids),
+            "images_generated":       len(scene_images_map),
+            "errors":                 errors,
+            "timestamp":              datetime.now().isoformat(),
         }
 
         with open(self.run_dir / "phase3_output.json", "w", encoding="utf-8") as f:
