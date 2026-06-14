@@ -70,6 +70,7 @@ class Phase3Request(BaseModel):
     phase2_run:    Optional[str] = None   # auto-detect latest if None
     mock:          bool = False
     use_subtitles: bool = False
+    use_lip_sync:  bool = False 
     short_mode:    bool = False           # limit to 1 scene / 3 lines
 
 
@@ -355,6 +356,7 @@ async def _run_phase3(job_id: str, req: Phase3Request):
                 phase2_run_dir=phase2_run,
                 mock=req.mock,
                 use_subtitles=req.use_subtitles,
+                use_lip_sync=req.use_lip_sync,
             ),
         )
 

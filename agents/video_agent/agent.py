@@ -152,6 +152,7 @@ class VideoAgent:
         phase2_run_dir: str = "",
         mock: bool = False,
         use_subtitles: bool = False,
+        use_lip_sync: bool = False,
     ) -> Dict[str, Any]:
         errors: List[str] = []
 
@@ -180,7 +181,7 @@ class VideoAgent:
             errors.append(f"Image generation failed: {e}")
             self.logger.error("Image generation failed: %s", e, exc_info=True)
 
-        # 3. Animation
+        # 3. Animation (Ken Burns)
         try:
             scene_clips = animator.animate_all_scenes(
                 dialogue_results=dialogue_results,
@@ -191,6 +192,124 @@ class VideoAgent:
             scene_clips = {}
             errors.append(f"Animation failed: {e}")
             self.logger.error("Animation failed: %s", e, exc_info=True)
+
+        # 3b. Lip sync (optional) — replaces animated clips with Wav2Lip output
+        # Runs after Ken Burns so Wav2Lip operates on animated frames, not static PNGs.
+        # Falls back gracefully to the Ken Burns clip if lip sync fails for any line.
+        if use_lip_sync and scene_clips:
+            from mcp.tools.video_tools.lip_sync import align_lip_sync
+            import subprocess as _sp
+            import imageio_ffmpeg as _iio
+
+            lipsync_dir = self.run_dir / "lipsync"
+            lipsync_dir.mkdir(parents=True, exist_ok=True)
+            ffmpeg = _iio.get_ffmpeg_exe()
+
+            lipsync_clips: Dict[str, str] = {}
+
+            for key, clip_path in scene_clips.items():
+                # key is "scene_id_line_index", e.g. "1_0"
+                parts = key.rsplit("_", 1)
+                if len(parts) != 2:
+                    lipsync_clips[key] = clip_path
+                    continue
+
+                scene_id_str, line_idx_str = parts
+
+                # Find the matching dialogue result to get audio_file
+                matching = next(
+                    (r for r in dialogue_results
+                     if str(r["scene_id"]) == scene_id_str
+                     and str(r["line_index"]) == line_idx_str),
+                    None
+                )
+                if not matching:
+                    lipsync_clips[key] = clip_path
+                    continue
+
+                audio_file = matching.get("audio_file", "")
+                if not audio_file or not Path(audio_file).exists():
+                    # No audio for this line — keep Ken Burns clip as-is
+                    lipsync_clips[key] = clip_path
+                    continue
+
+                # Extract frames from the Ken Burns clip into a temp directory
+                frames_dir = lipsync_dir / f"frames_{scene_id_str}_{line_idx_str}"
+                frames_dir.mkdir(parents=True, exist_ok=True)
+
+                frame_pattern = str(frames_dir / "frame_%04d.png")
+                extract_result = _sp.run(
+                    [ffmpeg, "-y", "-i", clip_path,
+                     "-vf", "fps=25", frame_pattern],
+                    capture_output=True, timeout=120,
+                )
+                if extract_result.returncode != 0:
+                    self.logger.warning(
+                        "[LipSync] Frame extraction failed for %s, keeping Ken Burns clip. "
+                        "stderr: %s", key, extract_result.stderr[-200:].decode("utf-8", errors="replace")
+                    )
+                    lipsync_clips[key] = clip_path
+                    continue
+
+                extracted = sorted(frames_dir.glob("frame_*.png"))
+                if not extracted:
+                    self.logger.warning("[LipSync] No frames extracted for %s, keeping Ken Burns clip", key)
+                    lipsync_clips[key] = clip_path
+                    continue
+
+                # Convert audio to WAV if needed (lip_sync backends expect WAV)
+                audio_path = audio_file
+                if not audio_file.endswith(".wav"):
+                    wav_path = str(lipsync_dir / f"audio_{scene_id_str}_{line_idx_str}.wav")
+                    conv = _sp.run(
+                        [ffmpeg, "-y", "-i", audio_file,
+                         "-ar", "16000", "-ac", "1", wav_path],
+                        capture_output=True, timeout=60,
+                    )
+                    if conv.returncode == 0:
+                        audio_path = wav_path
+                    else:
+                        self.logger.warning(
+                            "[LipSync] Audio conversion failed for %s, keeping Ken Burns clip", key
+                        )
+                        lipsync_clips[key] = clip_path
+                        continue
+
+                # Run lip sync
+                lipsync_out = str(lipsync_dir / f"lipsync_{scene_id_str}_{line_idx_str}.mp4")
+                try:
+                    result_ls = align_lip_sync(
+                        scene_id=int(scene_id_str) if scene_id_str.isdigit() else scene_id_str,
+                        audio_path=audio_path,
+                        frame_dir=str(frames_dir),
+                        output_video_path=lipsync_out,
+                        fps=25.0,
+                    )
+                    if result_ls and Path(result_ls["output_video_path"]).exists():
+                        lipsync_clips[key] = result_ls["output_video_path"]
+                        self.logger.info(
+                            "[LipSync] ✓ scene %s line %s — backend: %s",
+                            scene_id_str, line_idx_str, result_ls.get("backend", "?")
+                        )
+                    else:
+                        self.logger.warning(
+                            "[LipSync] Output missing for %s, keeping Ken Burns clip", key
+                        )
+                        lipsync_clips[key] = clip_path
+                except Exception as e:
+                    self.logger.warning(
+                        "[LipSync] Failed for %s (%s), keeping Ken Burns clip", key, e
+                    )
+                    lipsync_clips[key] = clip_path
+
+            # Replace scene_clips with lip-synced versions (fallbacks already in place)
+            scene_clips = lipsync_clips
+            self.logger.info(
+                "[LipSync] Pass complete — %d/%d clips lip-synced",
+                sum(1 for k, v in scene_clips.items()
+                    if "lipsync" in Path(v).name),
+                len(scene_clips),
+            )
 
         # 4. Video composition
         final_video_path    = str(self.run_dir / "final_output.mp4")
@@ -236,6 +355,7 @@ class VideoAgent:
             "final_video":            final_video or final_video_path,
             "final_video_captioned":  (final_video or subtitled_video_path) if use_subtitles else None,
             "use_subtitles":          use_subtitles,
+            "use_lip_sync":           use_lip_sync,
             "total_duration_seconds": total_dur_ms / 1000.0,
             "scene_count":            len(unique_sids),
             "images_generated":       len(scene_images_map),
