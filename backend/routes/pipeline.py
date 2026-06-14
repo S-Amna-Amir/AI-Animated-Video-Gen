@@ -231,11 +231,10 @@ async def _run_phase1_resume(job_id: str, req: Phase1ResumeRequest):
         chars  = state.get("characters", [])
         jobs.log(job_id, f"Characters built : {len(chars)}")
         jobs.set_complete(job_id, result={
-            "run_id":         result["run_id"],
-            "final_video":    result.get("final_video"),
-            "use_subtitles":  result.get("use_subtitles", False),
-            "status":         result["status"],
-            "run_dir":        str(Path("data/outputs/Phase3") / result["run_id"]),
+            "title":        script.get("title"),
+            "total_scenes": script.get("total_scenes"),
+            "characters":   len(chars),
+            "output_dir":   "data/outputs",
         })
         jobs.log(job_id, "Phase 1 complete ✓")
 
@@ -370,10 +369,11 @@ async def _run_phase3(job_id: str, req: Phase3Request):
         jobs.log(job_id, f"Clips   : {sum(1 for p in clips.values() if p)}/{len(clips)}")
         jobs.log(job_id, f"Video   : {result.get('final_video')}")
         jobs.set_complete(job_id, result={
-            "run_id":      result["run_id"],
-            "final_video": result.get("final_video"),
-            "status":      result["status"],
-            "run_dir":     str(Path("data/outputs/Phase3") / result["run_id"]),
+            "run_id":        result["run_id"],
+            "final_video":   result.get("final_video"),
+            "use_subtitles": result.get("use_subtitles", False),
+            "status":        result["status"],
+            "run_dir":       str(Path("data/outputs/Phase3") / result["run_id"]),
         })
         jobs.log(job_id, f"Phase 3 {result['status']} ✓")
 
@@ -393,36 +393,6 @@ async def get_job_status(job_id: str):
     # Don't send the full parked state to the client
     return {k: v for k, v in job.items() if not k.startswith("_")}
 
-
-# ── WebSocket log stream ──────────────────────────────────────────────────────
-
-@router.websocket("/ws/{job_id}")
-async def ws_job_logs(websocket: WebSocket, job_id: str):
-    """Stream live log lines for a job as they are appended."""
-    await websocket.accept()
-    sent = 0
-    try:
-        while True:
-            job = jobs.get(job_id)
-            if not job:
-                await websocket.send_json({"error": "Job not found"})
-                break
-
-            logs = job.get("logs", [])
-            while sent < len(logs):
-                await websocket.send_json({"log": logs[sent]})
-                sent += 1
-
-            if job["status"] in ("complete", "failed", "pending_hitl"):
-                payload = {"status": job["status"], "result": job.get("result")}
-                if job["status"] == "pending_hitl":
-                    payload["script"] = job.get("script")  # send the script to the frontend
-                await websocket.send_json(payload)
-                break 
-
-            await asyncio.sleep(0.3)
-    except WebSocketDisconnect:
-        pass
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────

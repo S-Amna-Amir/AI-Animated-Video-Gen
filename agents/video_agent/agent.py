@@ -282,4 +282,13 @@ class VideoAgent:
         if not base.exists():
             return ""
         dirs = [p for p in base.iterdir() if p.is_dir()]
-        return str(max(dirs, key=lambda p: p.stat().st_mtime)) if dirs else ""
+        if not dirs:
+            return ""
+
+        def _run_key(p: Path):
+            parts = p.name.rsplit("_", 1)
+            if len(parts) == 2 and parts[1].isdigit():
+                return (1, int(parts[1]))
+            return (0, p.stat().st_mtime)
+
+        return str(max(dirs, key=_run_key))
