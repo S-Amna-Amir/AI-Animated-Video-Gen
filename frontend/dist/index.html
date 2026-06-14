@@ -849,20 +849,438 @@ function Phase5Page() {
   );
 }
 
-// ── App shell ─────────────────────────────────────────────────────────────────
+// ── Pipeline (connected flow) page ───────────────────────────────────────────
+function PipelinePage({setPage}) {
+  // Pipeline state machine: idle → p1_running → p1_review → p1_resuming → p1_done
+  //                          → p2_running → p2_done → p3_running → p3_done
+  const [stage, setStage]     = useState('idle');   // current stage
+  const [storyTitle, setStoryTitle] = useState('');
+  const [storyGenre, setStoryGenre] = useState('');
+
+  // Phase 1
+  const [mode, setMode]       = useState('auto');
+  const [input, setInput]     = useState('');
+  const [p1Logs, setP1Logs]   = useState([]);
+  const [p1JobId, setP1JobId] = useState(null);
+  const [p1Script, setP1Script] = useState(null);
+  const [p1Result, setP1Result] = useState(null);
+  const [hitlEdit, setHitlEdit] = useState('');
+  const p1Ws = useRef(null);
+
+  // Phase 2
+  const [p2Logs, setP2Logs]   = useState([]);
+  const [p2Result, setP2Result] = useState(null);
+  const p2Ws = useRef(null);
+
+  // Phase 3
+  const [mock, setMock]       = useState(false);
+  const [short, setShort]     = useState(false);
+  const [subtitles, setSubs]  = useState(false);
+  const [p3Logs, setP3Logs]   = useState([]);
+  const [p3Result, setP3Result] = useState(null);
+  const p3Ws = useRef(null);
+
+  const [error, setError]     = useState(null);
+
+  // ── Phase 1 ────────────────────────────────────────────────────────────────
+  const runP1 = async () => {
+    if (!input.trim()) return;
+    setStage('p1_running'); setP1Logs([]); setError(null);
+    setP1Script(null); setP1Result(null);
+    try {
+      const res = await post('/api/pipeline/phase1/generate', {mode, raw_input: input});
+      setP1JobId(res.job_id);
+      if (p1Ws.current) p1Ws.current.close();
+      const ws = new WebSocket(`ws://${location.host}/api/pipeline/ws/${res.job_id}`);
+      p1Ws.current = ws;
+      ws.onmessage = (e) => {
+        const d = JSON.parse(e.data);
+        if (d.log) setP1Logs(prev => [...prev, d.log]);
+        if (d.status === 'pending_hitl') {
+          setP1Script(d.script || null);
+          setStoryTitle(d.script?.title || '');
+          setStoryGenre(d.script?.genre || '');
+          setStage('p1_review');
+        }
+        if (d.status === 'complete') { setP1Result(d.result); setStage('p1_done'); }
+        if (d.status === 'failed')   { setError(d.error || 'Phase 1 failed'); setStage('failed'); }
+      };
+      ws.onerror = () => { setError('WebSocket error'); setStage('failed'); };
+    } catch(e) { setError(e.message); setStage('failed'); }
+  };
+
+  const submitHitl = async (decision) => {
+    if (decision === 'edit' && !hitlEdit.trim()) { alert('Paste corrected JSON first.'); return; }
+    let parsed_edit;
+    if (decision === 'edit') {
+      try { parsed_edit = JSON.parse(hitlEdit); }
+      catch { alert('Invalid JSON.'); return; }
+    }
+    setStage('p1_resuming');
+    try {
+      await post('/api/pipeline/phase1/resume', {job_id: p1JobId, hitl_decision: decision, hitl_edit: parsed_edit});
+    } catch(e) { setError(e.message); setStage('failed'); }
+  };
+
+  // ── Phase 2 ────────────────────────────────────────────────────────────────
+  const runP2 = async () => {
+    setStage('p2_running'); setP2Logs([]); setP2Result(null); setError(null);
+    try {
+      const res = await post('/api/pipeline/phase2', {
+        phase1_dir: 'data/outputs', phase2_dir: 'data/outputs/Phase2',
+      });
+      if (p2Ws.current) p2Ws.current.close();
+      const ws = new WebSocket(`ws://${location.host}/api/pipeline/ws/${res.job_id}`);
+      p2Ws.current = ws;
+      ws.onmessage = (e) => {
+        const d = JSON.parse(e.data);
+        if (d.log) setP2Logs(prev => [...prev, d.log]);
+        if (d.status === 'complete') { setP2Result(d.result); setStage('p2_done'); }
+        if (d.status === 'failed')   { setError(d.error || 'Phase 2 failed'); setStage('failed'); }
+      };
+      ws.onerror = () => { setError('WebSocket error'); setStage('failed'); };
+    } catch(e) { setError(e.message); setStage('failed'); }
+  };
+
+  // ── Phase 3 ────────────────────────────────────────────────────────────────
+  const runP3 = async () => {
+    setStage('p3_running'); setP3Logs([]); setP3Result(null); setError(null);
+    const endpoint = short ? '/api/pipeline/phase3/short' : '/api/pipeline/phase3';
+    try {
+      const res = await post(endpoint, {
+        phase1_dir: 'data/outputs', mock, use_subtitles: subtitles, short_mode: short, use_lip_sync: false,
+      });
+      if (p3Ws.current) p3Ws.current.close();
+      const ws = new WebSocket(`ws://${location.host}/api/pipeline/ws/${res.job_id}`);
+      p3Ws.current = ws;
+      ws.onmessage = (e) => {
+        const d = JSON.parse(e.data);
+        if (d.log) setP3Logs(prev => [...prev, d.log]);
+        if (d.status === 'complete') { setP3Result(d.result); setStage('p3_done'); }
+        if (d.status === 'failed')   { setError(d.error || 'Phase 3 failed'); setStage('failed'); }
+      };
+      ws.onerror = () => { setError('WebSocket error'); setStage('failed'); };
+    } catch(e) { setError(e.message); setStage('failed'); }
+  };
+
+  const reset = () => {
+    [p1Ws, p2Ws, p3Ws].forEach(r => r.current?.close());
+    setStage('idle'); setP1Logs([]); setP2Logs([]); setP3Logs([]);
+    setP1Script(null); setP1Result(null); setP2Result(null); setP3Result(null);
+    setStoryTitle(''); setStoryGenre(''); setError(null); setInput('');
+  };
+
+  // ── Step indicator ─────────────────────────────────────────────────────────
+  const steps = [
+    {key:'p1', label:'Script', stages:['p1_running','p1_review','p1_resuming','p1_done']},
+    {key:'p2', label:'Audio',  stages:['p2_running','p2_done']},
+    {key:'p3', label:'Video',  stages:['p3_running','p3_done']},
+    {key:'p5', label:'Edit',   stages:[]},
+  ];
+  const stageOrder = ['idle','p1_running','p1_review','p1_resuming','p1_done','p2_running','p2_done','p3_running','p3_done','failed'];
+  const stageIdx   = stageOrder.indexOf(stage);
+
+  const stepState = (s) => {
+    if (stage === 'failed') {
+      if (s.key==='p1' && stageIdx <= 4) return 'active';
+      if (s.key==='p2' && stageIdx===5)  return 'active';
+      if (s.key==='p3' && stageIdx>=6)   return 'active';
+      return stageIdx > stageOrder.indexOf(s.stages[s.stages.length-1]||'idle') ? 'done' : 'idle';
+    }
+    if (s.stages.some(st => stage === st)) return 'running';
+    const lastDoneStage = s.key==='p1'?'p1_done': s.key==='p2'?'p2_done': s.key==='p3'?'p3_done': '';
+    if (lastDoneStage && stageOrder.indexOf(stage) > stageOrder.indexOf(lastDoneStage)) return 'done';
+    return 'idle';
+  };
+
+  const StepBar = () => (
+    <div style={{display:'flex',alignItems:'center',gap:0,marginBottom:24}}>
+      {steps.map((s,i) => {
+        const st = stepState(s);
+        const color = st==='done'?'var(--success)': st==='running'?'var(--accent)': st==='active'?'var(--error)':'var(--muted)';
+        return (
+          <React.Fragment key={s.key}>
+            <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4,flex:1}}>
+              <div style={{
+                width:32,height:32,borderRadius:'50%',border:`2px solid ${color}`,
+                display:'flex',alignItems:'center',justifyContent:'center',
+                fontSize:'.8rem',fontWeight:700,color,background:'var(--surface)',
+              }}>
+                {st==='done'?'✓': st==='running'?<span style={{animation:'pulse 1s infinite',display:'inline-block'}}>●</span>: i+1}
+              </div>
+              <div style={{fontSize:'.75rem',color,fontWeight:st==='running'?700:400}}>{s.label}</div>
+            </div>
+            {i < steps.length-1 && (
+              <div style={{flex:2,height:2,background: stageOrder.indexOf(stage) > stageOrder.indexOf(steps[i].stages[steps[i].stages.length-1]||'p1_done') ? 'var(--success)' : 'var(--border)',marginBottom:16}}/>
+            )}
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
+
+  // ── Story title banner (shown once we have it) ─────────────────────────────
+  const TitleBanner = () => !storyTitle ? null : (
+    <div style={{
+      background:'linear-gradient(135deg,rgba(124,106,247,.15),rgba(167,139,250,.1))',
+      border:'1px solid var(--accent)',borderRadius:8,padding:'10px 16px',
+      marginBottom:16,display:'flex',alignItems:'center',gap:10,
+    }}>
+      <span style={{fontSize:'1.2rem'}}>🎬</span>
+      <div>
+        <div style={{fontWeight:700,fontSize:'1rem'}}>{storyTitle}</div>
+        {storyGenre && <div style={{color:'var(--muted)',fontSize:'.8rem'}}>{storyGenre}</div>}
+      </div>
+      <div style={{marginLeft:'auto'}}><StatusPill status="complete"/></div>
+    </div>
+  );
+
+  return (
+    <div>
+      <div className="page-title">Pipeline — Full Run</div>
+      <div className="page-sub">Run all phases in sequence. Each phase feeds directly into the next.</div>
+
+      <StepBar/>
+      {storyTitle && <TitleBanner/>}
+
+      {/* ── STAGE: idle ── */}
+      {stage === 'idle' && (
+        <div className="card">
+          <h3>Step 1 of 3 — Generate Script</h3>
+          <div className="field">
+            <label>Mode</label>
+            <div className="toggle-group">
+              {['auto','manual'].map(m=>(
+                <button key={m} className={`toggle-btn ${mode===m?'active':''}`} onClick={()=>setMode(m)}>
+                  {m==='auto'?'🤖 Generate from prompt':'📄 Upload screenplay'}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="field">
+            <label>{mode==='auto'?'Story Prompt':'Screenplay Text'}</label>
+            <textarea value={input} onChange={e=>setInput(e.target.value)} rows={mode==='auto'?3:8}
+              placeholder={mode==='auto'?'e.g. A spy thriller set in 1960s Berlin…':'Paste your screenplay here…'}/>
+          </div>
+          <div className="btn-row">
+            <button className="btn btn-primary" onClick={runP1} disabled={!input.trim()}>
+              ▶ Start Pipeline
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── STAGE: p1 running / resuming ── */}
+      {(stage==='p1_running'||stage==='p1_resuming') && (
+        <div className="card">
+          <h3>{stage==='p1_resuming'?'Building characters…':'Generating script…'} <StatusPill status="running"/></h3>
+          <LogBox logs={p1Logs}/>
+        </div>
+      )}
+
+      {/* ── STAGE: p1 review ── */}
+      {stage==='p1_review' && p1Script && (
+        <div className="card" style={{borderColor:'var(--accent)'}}>
+          <h3>📋 Review Script <StatusPill status="pending_hitl"/></h3>
+          <LogBox logs={p1Logs}/>
+          <div className="result-box" style={{margin:'12px 0'}}>
+            {[['Title',p1Script.title||'Untitled'],['Genre',p1Script.genre||'—'],['Scenes',p1Script.total_scenes||0]]
+              .map(([k,v])=>(
+                <div key={k} className="result-row">
+                  <span className="result-key">{k}</span>
+                  <span className="result-val">{String(v)}</span>
+                </div>
+              ))}
+          </div>
+          <div style={{maxHeight:240,overflowY:'auto',marginBottom:12}}>
+            {(p1Script.scenes||[]).map((sc,i)=>(
+              <div key={i} style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:6,padding:'10px 12px',marginBottom:8}}>
+                <div style={{fontWeight:700,fontSize:'.88rem',marginBottom:3}}>Scene {sc.scene_id} — {sc.location}</div>
+                <div style={{color:'var(--muted)',fontSize:'.8rem',marginBottom:5}}>{sc.characters?.join(', ')}</div>
+                {(sc.dialogue||[]).slice(0,2).map((dl,j)=>(
+                  <div key={j} style={{borderLeft:'2px solid var(--accent)',paddingLeft:8,marginBottom:3,fontSize:'.8rem',color:'var(--muted)'}}>
+                    <strong style={{color:'var(--text)'}}>{dl.speaker}:</strong> "{dl.line}"
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+          <div className="field">
+            <label>Edit JSON (optional)</label>
+            <textarea value={hitlEdit} onChange={e=>setHitlEdit(e.target.value)} rows={3}
+              placeholder='{"title":"…","scenes":[…]}' style={{fontFamily:'monospace',fontSize:'.8rem'}}/>
+          </div>
+          <div className="btn-row">
+            <button className="btn btn-primary" onClick={()=>submitHitl('yes')}>✅ Approve — proceed to audio</button>
+            <button className="btn btn-secondary" onClick={()=>submitHitl('edit')} disabled={!hitlEdit.trim()}>✏️ Apply edit & proceed</button>
+            <button className="btn btn-danger" onClick={()=>submitHitl('no')}>❌ Reject</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── STAGE: p1 done ── */}
+      {stage==='p1_done' && (
+        <div className="card">
+          <h3>✅ Script complete — ready for audio <StatusPill status="complete"/></h3>
+          {p1Result && (
+            <div className="result-box" style={{marginBottom:14}}>
+              {Object.entries(p1Result).map(([k,v])=>(
+                <div key={k} className="result-row">
+                  <span className="result-key">{k}</span>
+                  <span className="result-val">{String(v)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="btn-row">
+            <button className="btn btn-primary" onClick={runP2}>🎵 Proceed to Audio Generation →</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── STAGE: p2 running ── */}
+      {stage==='p2_running' && (
+        <div className="card">
+          <h3>Step 2 of 3 — Generating Audio… <StatusPill status="running"/></h3>
+          <div style={{color:'var(--muted)',fontSize:'.82rem',marginBottom:10}}>
+            Synthesising dialogue with Edge-TTS and fetching background music.
+          </div>
+          <LogBox logs={p2Logs}/>
+        </div>
+      )}
+
+      {/* ── STAGE: p2 done ── */}
+      {stage==='p2_done' && (
+        <div className="card">
+          <h3>✅ Audio complete — ready for video <StatusPill status="complete"/></h3>
+          {p2Result && (
+            <div className="result-box" style={{marginBottom:10}}>
+              {[['run_id','run_id'],['duration_ms','duration_ms'],['run_id','run_id']].filter(([k])=>p2Result[k])
+                .concat(Object.entries(p2Result).filter(([k])=>!['master_audio','timing_manifest','output_dir'].includes(k)))
+                .filter(([k,],i,a)=>a.findIndex(([x])=>x===k)===i)
+                .map(([k,v])=>(
+                  <div key={k} className="result-row">
+                    <span className="result-key">{k}</span>
+                    <span className="result-val">{String(v)}</span>
+                  </div>
+                ))}
+            </div>
+          )}
+          {p2Result?.run_id && (
+            <div style={{marginBottom:14}}>
+              <audio controls style={{width:'100%'}} src={`/api/files/audio/${p2Result.run_id}`}/>
+            </div>
+          )}
+          <div className="field">
+            <label>Video Options</label>
+            <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+              {[
+                ['mock','🖼 Mock images (fast, no HF API)',mock,setMock],
+                ['short','⚡ Short mode (1 scene)',short,setShort],
+                ['subs','💬 Burn subtitles',subtitles,setSubs],
+              ].map(([k,label,val,setter])=>(
+                <button key={k} className={`toggle-btn ${val?'active':''}`}
+                  style={{flex:'0 0 auto',padding:'8px 14px'}} onClick={()=>setter(v=>!v)}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="btn-row">
+            <button className="btn btn-primary" onClick={runP3}>🎬 Proceed to Video Generation →</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── STAGE: p3 running ── */}
+      {stage==='p3_running' && (
+        <div className="card">
+          <h3>Step 3 of 3 — Generating Video… <StatusPill status="running"/></h3>
+          <div style={{color:'var(--muted)',fontSize:'.82rem',marginBottom:10}}>
+            Generating scene images, animating with Ken Burns effect, composing final MP4.
+          </div>
+          <LogBox logs={p3Logs}/>
+        </div>
+      )}
+
+      {/* ── STAGE: p3 done ── */}
+      {stage==='p3_done' && (
+        <div className="card" style={{borderColor:'var(--success)'}}>
+          <h3 style={{color:'var(--success)'}}>🎉 Pipeline complete! <StatusPill status="complete"/></h3>
+          {p3Result?.final_video && (
+            <div style={{margin:'12px 0'}}>
+              <video className="video-player" controls
+                src={p3Result.use_subtitles
+                  ? `/api/files/video/${p3Result.run_id}/captioned`
+                  : `/api/files/video/${p3Result.run_id}`}/>
+            </div>
+          )}
+          {p3Result && (
+            <div className="result-box" style={{marginBottom:14}}>
+              {Object.entries(p3Result)
+                .filter(([k])=>!['final_video','run_dir'].includes(k))
+                .map(([k,v])=>(
+                  <div key={k} className="result-row">
+                    <span className="result-key">{k}</span>
+                    <span className="result-val">{String(v)}</span>
+                  </div>
+                ))}
+            </div>
+          )}
+          <div className="btn-row">
+            {p3Result?.run_id && (
+              <a href={p3Result.use_subtitles
+                ? `/api/files/video/${p3Result.run_id}/captioned`
+                : `/api/files/video/${p3Result.run_id}`} download>
+                <button className="btn btn-secondary">⬇ Download Video</button>
+              </a>
+            )}
+            <button className="btn btn-primary" onClick={()=>setPage('phase5')}>
+              ✏️ Open Edit Agent →
+            </button>
+            <button className="btn btn-secondary" onClick={reset}>↩ Start new pipeline</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── STAGE: failed ── */}
+      {stage==='failed' && (
+        <div className="card" style={{borderColor:'var(--error)'}}>
+          <h3>Pipeline failed <StatusPill status="failed"/></h3>
+          <div style={{color:'var(--error)',marginBottom:12,fontSize:'.88rem'}}>{error}</div>
+          {p1Logs.length>0 && <LogBox logs={p1Logs}/>}
+          {p2Logs.length>0 && <LogBox logs={p2Logs}/>}
+          {p3Logs.length>0 && <LogBox logs={p3Logs}/>}
+          <div className="btn-row" style={{marginTop:14}}>
+            <button className="btn btn-secondary" onClick={reset}>↩ Start over</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 function App() {
-  const [page, setPage] = useState('overview');
+  const [page, setPage] = useState('pipeline');
 
   const nav = [
-    {id:'overview', label:'Overview',      icon:'🏠'},
-    {id:'phase1',   label:'Phase 1',       icon:'📝'},
-    {id:'phase2',   label:'Phase 2',       icon:'🎵'},
-    {id:'phase3',   label:'Phase 3',       icon:'🎬'},
-    {id:'phase5',   label:'Phase 5 — Edit',icon:'✏️'},
-    {id:'runs',     label:'Run History',   icon:'📂'},
+    {id:'pipeline', label:'Pipeline',       icon:'🚀', badge:'START HERE'},
+    {id:'overview', label:'Overview',       icon:'🏠'},
+    {id:'phase1',   label:'Phase 1',        icon:'📝'},
+    {id:'phase2',   label:'Phase 2',        icon:'🎵'},
+    {id:'phase3',   label:'Phase 3',        icon:'🎬'},
+    {id:'phase5',   label:'Phase 5 — Edit', icon:'✏️'},
+    {id:'runs',     label:'Run History',    icon:'📂'},
   ];
 
-  const pages = {overview:<OverviewPage setPage={setPage}/>, phase1:<Phase1Page/>, phase2:<Phase2Page/>, phase3:<Phase3Page/>, phase5:<Phase5Page/>, runs:<RunsPage/>};
+  const pages = {
+    pipeline:<PipelinePage setPage={setPage}/>,
+    overview:<OverviewPage setPage={setPage}/>,
+    phase1:<Phase1Page/>,
+    phase2:<Phase2Page/>,
+    phase3:<Phase3Page/>,
+    phase5:<Phase5Page/>,
+    runs:<RunsPage/>,
+  };
 
   return (
     <div className="app">
@@ -880,10 +1298,11 @@ function App() {
           {nav.map(n=>(
             <div key={n.id} className={`nav-item ${page===n.id?'active':''}`} onClick={()=>setPage(n.id)}>
               <span>{n.icon}</span><span>{n.label}</span>
+              {n.badge && <span className="nav-badge" style={{fontSize:'.6rem',padding:'1px 5px'}}>{n.badge}</span>}
             </div>
           ))}
         </div>
-        <div className="content">{pages[page]||pages.overview}</div>
+        <div className="content">{pages[page]||pages.pipeline}</div>
       </div>
     </div>
   );

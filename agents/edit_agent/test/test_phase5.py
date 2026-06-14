@@ -49,6 +49,24 @@ class TestIntentClassifier:
         assert r["target"] == "audio"
         assert "music" in r["intent"] or "background" in r["intent"]
 
+    def test_change_bgm(self):
+        r = self.clf.classify("Change BGM to jazz music")
+        assert r["target"] == "audio"
+        assert r["intent"] == "change_bgm"
+        assert r["parameters"]["mood_query"] == "jazz music"
+
+    def test_increase_bgm_volume(self):
+        r = self.clf.classify("Increase volume of BGM")
+        assert r["target"] == "audio"
+        assert r["intent"] == "increase_bgm_volume"
+        assert r["parameters"]["volume_factor"] == 1.5
+
+    def test_decrease_bgm_volume(self):
+        r = self.clf.classify("Make BGM quieter")
+        assert r["target"] == "audio"
+        assert r["intent"] == "decrease_bgm_volume"
+        assert r["parameters"]["volume_factor"] == 0.5
+
     def test_remove_subtitle(self):
         r = self.clf.classify("Remove the subtitle")
         assert r["target"] == "video"

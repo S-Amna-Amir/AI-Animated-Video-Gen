@@ -9,11 +9,12 @@ from pathlib import Path
 PROJECT_ROOT   = Path(__file__).resolve().parents[2]
 DATA_DIR       = PROJECT_ROOT / "data"
 OUTPUTS_DIR    = DATA_DIR / "outputs"
+RUNS_DIR       = DATA_DIR / "runs"       # unified per-story project folders
 TEMP_DIR       = DATA_DIR / "temp"
 STATE_VERSIONS = DATA_DIR / "state_versions"
 
 # Ensure directories exist at import time
-for _d in (OUTPUTS_DIR, TEMP_DIR, STATE_VERSIONS, OUTPUTS_DIR / "images"):
+for _d in (OUTPUTS_DIR, RUNS_DIR, TEMP_DIR, STATE_VERSIONS, OUTPUTS_DIR / "images"):
     _d.mkdir(parents=True, exist_ok=True)
 
 # ── MCP / memory collections ───────────────────────────────────────────────────

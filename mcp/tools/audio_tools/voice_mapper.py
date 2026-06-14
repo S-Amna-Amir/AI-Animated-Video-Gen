@@ -82,10 +82,42 @@ class VoiceMapper:
         return voice
 
     def _assign_voice_by_name(self, name: str) -> str:
-        female_endings = ("A", "E", "I", "H", "NA", "IA", "AH", "Y")
+        """
+        Heuristic voice assignment for unknown character names.
+        Checks keyword indicators first, then falls back to vowel ending.
+        """
+        lower = name.lower()
+
+        # ── Keyword-based gender detection ────────────────────────────────────
+        female_keywords = (
+            "woman", "girl", "lady", "female", "mother", "mom", "mum",
+            "sister", "wife", "queen", "princess", "aunt", "grandma",
+            "grandmother", "ms", "mrs", "miss", "she", "her",
+        )
+        male_keywords = (
+            "man", "boy", "male", "father", "dad", "brother", "husband",
+            "king", "prince", "uncle", "grandpa", "grandfather",
+            "mr", "sir", "he", "his", "guy", "dude",
+        )
+
+        for kw in female_keywords:
+            if kw in lower.split() or lower == kw or lower.endswith(" " + kw) or lower.startswith(kw + " "):
+                pool = self.FEMALE_VOICES_PREFERRED
+                voice = pool[self.assignment_counter % len(pool)]
+                return voice
+
+        for kw in male_keywords:
+            if kw in lower.split() or lower == kw or lower.endswith(" " + kw) or lower.startswith(kw + " "):
+                pool = self.MALE_VOICES_PREFERRED
+                voice = pool[self.assignment_counter % len(pool)]
+                return voice
+
+        # ── Vowel-ending fallback (weak signal) ───────────────────────────────
+        female_endings = ("a", "e", "i", "na", "ia", "ah")
+        last_word = lower.split()[-1] if lower.split() else lower
         pool = (
             self.FEMALE_VOICES_PREFERRED
-            if name.endswith(female_endings)
+            if any(last_word.endswith(fe) for fe in female_endings)
             else self.MALE_VOICES_PREFERRED
         )
         return pool[self.assignment_counter % len(pool)]

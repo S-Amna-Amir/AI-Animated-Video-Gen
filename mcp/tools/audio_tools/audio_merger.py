@@ -14,16 +14,26 @@ logger = logging.getLogger(__name__)
 
 def _has_ffmpeg() -> bool:
     try:
-        subprocess.run(["ffmpeg", "-version"], capture_output=True, timeout=5)
+        import imageio_ffmpeg as _iio
+        exe = _iio.get_ffmpeg_exe()
+        subprocess.run([exe, "-version"], capture_output=True, timeout=5)
         return True
     except Exception:
         return False
 
 
+def _ffmpeg_exe() -> str:
+    """Return the imageio-ffmpeg bundled binary path."""
+    import imageio_ffmpeg as _iio
+    return _iio.get_ffmpeg_exe()
+
+
 def get_audio_duration_seconds(path: str) -> Optional[float]:
     try:
+        import imageio_ffmpeg as _iio
+        ffprobe = _iio.get_ffmpeg_exe().replace("ffmpeg", "ffprobe")
         r = subprocess.run(
-            ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+            [ffprobe, "-v", "error", "-show_entries", "format=duration",
              "-of", "default=noprint_wrappers=1:nokey=1", path],
             capture_output=True, text=True, timeout=10,
         )
@@ -44,7 +54,7 @@ def concatenate_audio_files(audio_files: List[str], output_file: str) -> bool:
             for p in audio_files:
                 f.write(f"file '{Path(p).resolve()}'\n")
         r = subprocess.run(
-            ["ffmpeg", "-y", "-f", "concat", "-safe", "0",
+            [_ffmpeg_exe(), "-y", "-f", "concat", "-safe", "0",
              "-i", str(concat_list), "-c", "copy", output_file],
             capture_output=True, text=True, timeout=120,
         )
@@ -90,7 +100,7 @@ def compose_voice_with_bgm(
             f"[1:a][bd]amix=inputs=2:duration=first[aout]"
         )
         r = subprocess.run(
-            ["ffmpeg", "-y", "-i", bgm_file, "-i", voice_file,
+            [_ffmpeg_exe(), "-y", "-i", bgm_file, "-i", voice_file,
              "-filter_complex", filt, "-map", "[aout]", "-q:a", "0", output_file],
             capture_output=True, text=True, timeout=60,
         )

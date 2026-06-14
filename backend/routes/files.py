@@ -104,3 +104,57 @@ async def get_character_db():
         if p.exists():
             return FileResponse(str(p), media_type="application/json")
     raise HTTPException(status_code=404, detail="No character DB found. Run Phase 1 first.")
+
+
+# ── Project-aware file serving ─────────────────────────────────────────────────
+# Serves files from named project folders: data/runs/<slug>/
+
+@router.get("/project/{run_id}/video")
+async def get_project_video(run_id: str):
+    """Serve the final Phase 3 video for a named project."""
+    from agents.pipeline_run_manager import PipelineRunManager
+    pm = PipelineRunManager.load(run_id)
+    if not pm:
+        raise HTTPException(status_code=404, detail=f"Project '{run_id}' not found")
+    # VideoRunManager creates phase3/run_01/ inside the project phase3 dir
+    candidates = list(pm.phase3_dir.rglob("final_output.mp4")) if pm.phase3_dir.exists() else []
+    if candidates:
+        return FileResponse(str(candidates[0]), media_type="video/mp4", filename="final_output.mp4")
+    raise HTTPException(status_code=404, detail="No video found. Run Phase 3 first.")
+
+
+@router.get("/project/{run_id}/audio")
+async def get_project_audio(run_id: str):
+    """Serve the Phase 2 master audio for a named project."""
+    from agents.pipeline_run_manager import PipelineRunManager
+    pm = PipelineRunManager.load(run_id)
+    if not pm:
+        raise HTTPException(status_code=404, detail=f"Project '{run_id}' not found")
+    # AudioRunManager writes directly into phase2/ (no run_XX subdir in new layout)
+    audio = pm.phase2_dir / "master_audio_track.mp3"
+    _safe(audio)
+    return FileResponse(str(audio), media_type="audio/mpeg", filename="master_audio_track.mp3")
+
+
+@router.get("/project/{run_id}/edit/{edit_index}/video")
+async def get_project_edit_video(run_id: str, edit_index: int):
+    """Serve the output video for a specific edit of a named project."""
+    from agents.pipeline_run_manager import PipelineRunManager
+    import json
+    pm = PipelineRunManager.load(run_id)
+    if not pm:
+        raise HTTPException(status_code=404, detail=f"Project '{run_id}' not found")
+    edit_dir = pm.phase5_dir / f"edit_{edit_index:03d}"
+    if not edit_dir.exists():
+        raise HTTPException(status_code=404, detail=f"Edit {edit_index} not found")
+    manifest_path = edit_dir / "edit_manifest.json"
+    if manifest_path.exists():
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        out = manifest.get("output_file", "")
+        if out and Path(out).exists():
+            return FileResponse(str(out), media_type="video/mp4",
+                                filename=f"edit_{edit_index:03d}_output.mp4")
+    for mp4 in edit_dir.glob("*.mp4"):
+        return FileResponse(str(mp4), media_type="video/mp4",
+                            filename=f"edit_{edit_index:03d}_output.mp4")
+    raise HTTPException(status_code=404, detail=f"No video found for edit {edit_index}")

@@ -315,45 +315,55 @@ def image_node(state: ProjectState) -> ProjectState:
 
 def memory_commit_node(state: ProjectState) -> ProjectState:
     """Final node: commits all outputs to memory and saves JSON files."""
-    import mcp
     from mcp import invoke_tool
 
     logger.info("[MemoryCommit] Committing final state to memory...")
 
-    invoke_tool("commit_memory", {
-        "collection": "scripts",
-        "data":       state.get("script", {}),
-        "doc_id":     "scene_manifest_final",
-    })
-    invoke_tool("commit_memory", {
-        "collection": "characters",
-        "data":       state.get("characters", []),
-        "doc_id":     "character_db_final",
-    })
+    invoke_tool("commit_memory", {"collection": "scripts",    "data": state.get("script", {}),    "doc_id": "scene_manifest_final"})
+    invoke_tool("commit_memory", {"collection": "characters", "data": state.get("characters", []), "doc_id": "character_db_final"})
 
-    # Save JSON output files
-    invoke_tool("save_json_file", {
-        "data":     state.get("script", {}),
-        "filepath": str(OUTPUTS_DIR / "scene_manifest.json"),
-    })
-    invoke_tool("save_json_file", {
-        "data":     state.get("characters", []),
-        "filepath": str(OUTPUTS_DIR / "character_db.json"),
-    })
-    invoke_tool("save_json_file", {
-        "data":     state.get("memory_log", []),
-        "filepath": str(OUTPUTS_DIR / "memory_log.json"),
-    })
+    # ── Write to data/outputs/ as shared "current-run pointer" ───────────────
+    # Phase 2 + 3 agents read scene_manifest.json from here by default.
+    invoke_tool("save_json_file", {"data": state.get("script",     {}),  "filepath": str(OUTPUTS_DIR / "scene_manifest.json")})
+    invoke_tool("save_json_file", {"data": state.get("characters", []),  "filepath": str(OUTPUTS_DIR / "character_db.json")})
+    invoke_tool("save_json_file", {"data": state.get("memory_log", []),  "filepath": str(OUTPUTS_DIR / "memory_log.json")})
+
+    # ── Create named project folder: data/runs/<timestamp>_<slug>/ ───────────
+    title = state.get("script", {}).get("title", "untitled")
+    project_run_id = ""
+    try:
+        import json as _json
+        from agents.pipeline_run_manager import PipelineRunManager
+        pm = PipelineRunManager.create(title)
+
+        # Write Phase 1 outputs into phase1/ — ONLY location, no duplication
+        (pm.phase1_dir / "scene_manifest.json").write_text(
+            _json.dumps(state.get("script", {}), indent=2), encoding="utf-8"
+        )
+        (pm.phase1_dir / "character_db.json").write_text(
+            _json.dumps(state.get("characters", []), indent=2), encoding="utf-8"
+        )
+        (pm.phase1_dir / "memory_log.json").write_text(
+            _json.dumps(state.get("memory_log", []), indent=2), encoding="utf-8"
+        )
+        pm.mark_phase_complete(1)
+        project_run_id = pm.run_id
+        logger.info("[MemoryCommit] Project folder: %s", pm.run_dir)
+    except Exception as e:
+        logger.warning("[MemoryCommit] Could not create project folder: %s", e)
 
     memory_log = list(state.get("memory_log", [])) + [{
         "timestamp":  _ts(),
         "collection": "all",
         "doc_id":     "workflow_complete",
-        "summary":    "Final state committed. Phase 1 complete.",
+        "summary":    f"Phase 1 complete. Project run_id={project_run_id}",
     }]
 
+    # Stash run_id on script so pipeline.py can report it to the frontend
+    updated_script = {**state.get("script", {}), "_project_run_id": project_run_id}
+
     logger.info("[MemoryCommit] All outputs committed. Phase 1 COMPLETE.")
-    return {**state, "status": STATUS_COMPLETE, "memory_log": memory_log}
+    return {**state, "script": updated_script, "status": STATUS_COMPLETE, "memory_log": memory_log}
 
 
 # ── Private helpers ────────────────────────────────────────────────────────────

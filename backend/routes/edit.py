@@ -57,15 +57,42 @@ async def _run_edit(job_id: str, query: str):
 
     try:
         from agents.edit_agent.agent import EditAgent
+        from agents.pipeline_run_manager import PipelineRunManager
+        from pathlib import Path
+
         agent  = EditAgent(log_callback=_log)
         result = await agent.edit(query)
 
         if result["success"]:
+            # ── Write edit output into project folder ──────────────────────────
+            pm = PipelineRunManager.latest()
+            if pm:
+                # Find the output video from the execution steps
+                output_video = None
+                for step in result["execution"].get("steps", []):
+                    sr = step.get("result") or {}
+                    if isinstance(sr, dict) and "final_video" in sr:
+                        fv = sr["final_video"]
+                        if fv and Path(fv).exists():
+                            output_video = Path(fv)
+                            break
+
+                edit_dir = pm.next_edit_dir(query)
+                pm.finalize_edit(
+                    edit_dir=edit_dir,
+                    output_video=output_video,
+                    intent=result.get("intent", {}),
+                )
+                _log(f"[EditAgent] Saved to project: {edit_dir}")
+
             jobs.set_complete(job_id, result={
                 "intent":          result["intent"],
                 "snapshot_before": result["snapshot_before"],
                 "snapshot_after":  result["snapshot_after"],
                 "steps_completed": len([s for s in result["execution"]["steps"] if s["ok"]]),
+                "run_context":     result.get("run_context", {}),
+                "project_run_id":  pm.run_id if pm else "",
+                "edit_dir":        str(edit_dir) if pm else "",
             })
         else:
             jobs.set_failed(job_id, result.get("error", "Edit failed"))

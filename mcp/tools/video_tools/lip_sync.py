@@ -202,8 +202,9 @@ def _try_opencv_mux(scene_id, audio_path, frame_dir, output_video_path, fps):
                 if last is not None: writer.write(last)
         writer.release()
 
+        import imageio_ffmpeg as _iio_ffmpeg
         subprocess.run(
-            ["ffmpeg","-y","-i",tmp,"-i",audio_path,"-c:v","copy","-c:a","aac",output_video_path],
+            [_iio_ffmpeg.get_ffmpeg_exe(),"-y","-i",tmp,"-i",audio_path,"-c:v","copy","-c:a","aac",output_video_path],
             capture_output=True, timeout=120,
         )
         Path(tmp).unlink(missing_ok=True)
@@ -222,9 +223,10 @@ def _try_opencv_mux(scene_id, audio_path, frame_dir, output_video_path, fps):
 
 def _try_ffmpeg_mux(scene_id, audio_path, frame_dir, output_video_path, fps):
     try:
+        import imageio_ffmpeg as _iio_ffmpeg
         pattern = str(Path(frame_dir) / "frame_%04d.png")
         r = subprocess.run(
-            ["ffmpeg","-y","-framerate",str(fps),"-i",pattern,"-i",audio_path,
+            [_iio_ffmpeg.get_ffmpeg_exe(),"-y","-framerate",str(fps),"-i",pattern,"-i",audio_path,
              "-c:v","libx264","-c:a","aac","-pix_fmt","yuv420p",output_video_path],
             capture_output=True, timeout=300,
         )
@@ -259,8 +261,9 @@ def _write_video_with_audio(frames, audio_path, output_path, fps) -> float:
     wr   = cv2.VideoWriter(tmp, cv2.VideoWriter_fourcc(*"mp4v"), fps, (w,h))
     for f in frames: wr.write(f)
     wr.release()
+    import imageio_ffmpeg as _iio_ffmpeg
     subprocess.run(
-        ["ffmpeg","-y","-i",tmp,"-i",audio_path,"-c:v","copy","-c:a","aac","-shortest",output_path],
+        [_iio_ffmpeg.get_ffmpeg_exe(),"-y","-i",tmp,"-i",audio_path,"-c:v","copy","-c:a","aac","-shortest",output_path],
         capture_output=True, timeout=120,
     )
     Path(tmp).unlink(missing_ok=True)

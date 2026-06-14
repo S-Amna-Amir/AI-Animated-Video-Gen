@@ -9,10 +9,18 @@ import asyncio
 import importlib
 import json
 import logging
+import math
 import os
+import subprocess
+import shutil
+from io import BytesIO
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+
+import imageio_ffmpeg
+from pydub import AudioSegment
+from pydub.silence import detect_leading_silence
 
 from mcp.tools.audio_tools.voice_mapper import VoiceMapper
 from mcp.tools.audio_tools.tts_tool import TTSTool
@@ -22,6 +30,52 @@ from agents.audio_agent.run_manager import AudioRunManager
 from agents.audio_agent.planner import AudioPhasePlanner, DialogueExtractor
 
 logger = logging.getLogger(__name__)
+
+
+def _ffmpeg_path() -> str:
+    return imageio_ffmpeg.get_ffmpeg_exe()
+
+
+def _decode_audio_to_segment(source_path: Path, source_format: str = "mp3") -> AudioSegment:
+    ffmpeg_exe = _ffmpeg_path()
+    command = [
+        ffmpeg_exe,
+        "-hide_banner",
+        "-loglevel", "error",
+        "-i", str(source_path),
+        "-f", "wav",
+        "-",
+    ]
+    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if result.returncode != 0:
+        raise RuntimeError(result.stderr.decode("utf-8", errors="replace").strip() or f"ffmpeg decode failed for {source_path}")
+    return AudioSegment.from_file(BytesIO(result.stdout), format="wav")
+
+
+def _export_segment_as_mp3(segment: AudioSegment, output_path: Path, bitrate: str = "192k") -> None:
+    temp_wav = output_path.with_suffix(".tmp.wav")
+    segment.export(str(temp_wav), format="wav")
+    try:
+        ffmpeg_exe = _ffmpeg_path()
+        command = [
+            ffmpeg_exe,
+            "-y",
+            "-hide_banner",
+            "-loglevel", "error",
+            "-i", str(temp_wav),
+            "-codec:a", "libmp3lame",
+            "-b:a", bitrate,
+            str(output_path),
+        ]
+        result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode != 0:
+            raise RuntimeError(result.stderr.decode("utf-8", errors="replace").strip() or f"ffmpeg encode failed for {output_path}")
+    finally:
+        try:
+            if temp_wav.exists():
+                temp_wav.unlink()
+        except Exception:
+            pass
 
 
 def _load_moviepy():
@@ -36,6 +90,15 @@ def _load_moviepy():
         concatenate_audioclips = ac.concatenate_audioclips
 
     return _MP, afx
+
+
+def _trim_leading_silence(audio: AudioSegment, silence_threshold: int = -45, chunk_size: int = 20) -> AudioSegment:
+    leading_ms = detect_leading_silence(audio, silence_threshold=silence_threshold, chunk_size=chunk_size)
+    if leading_ms <= 0:
+        return audio
+    if leading_ms >= len(audio):
+        return audio
+    return audio[leading_ms:]
 
 
 # ── Timing manifest builder ────────────────────────────────────────────────────
@@ -69,8 +132,8 @@ class EnhancedAudioAgent:
     """
     Full Phase 2 pipeline:
       - Edge-TTS per dialogue line
-      - Freesound BGM per scene (with Groq mood query + fallback)
-      - MoviePy: voice + looped BGM (20% volume) -> composed MP3
+            - One shared Freesound BGM track per run, looped to full length
+            - MoviePy: voice-only scene concatenation
       - Master track concatenation
       - Cumulative timing manifest
     """
@@ -103,8 +166,11 @@ class EnhancedAudioAgent:
         self.run_manager.create_run_directory(run_id)
         self.tts_tool = TTSTool(str(self.run_manager.get_audio_output_dir()))
 
+        self.bgm_volume = 0.2
         self.scene_manifest: Dict = {}
-        self.bgm_metadata: Dict[int, Dict] = {}
+        self.bgm_metadata: Dict[str, Any] = {}
+        self.global_bgm_source: Optional[Path] = None
+        self.global_bgm_query: str = ""
         self.cumulative_timing: List[Dict] = []
 
         logger.info(f"[Audio] EnhancedAudioAgent ready | run={self.run_manager.current_run_id}")
@@ -199,16 +265,128 @@ class EnhancedAudioAgent:
             duration=max(20, len(scene.get("dialogue", [])) * 4),
         )
 
-    def _fetch_bgm(self, mood: str, scene_id: int) -> Optional[Path]:
-        bgm_out = self.run_manager.get_audio_scene_dir(scene_id) / "bgm.mp3"
+    def _get_global_bgm_query(self, scenes: List[Dict]) -> str:
+        if not scenes:
+            return "ambient background music"
+
+        snippets: List[str] = []
+        for scene in scenes[:3]:
+            scene_text = " ".join(
+                d.get("line", "") for d in scene.get("dialogue", []) if isinstance(d, dict)
+            ).strip()
+            if scene_text:
+                snippets.append(scene_text)
+
+        if snippets:
+            return self.mood_analyzer.generate_bgm_query(
+                scene_description=" ".join(snippets),
+                location=", ".join(
+                    str(scene.get("location", "")) for scene in scenes[:3] if scene.get("location")
+                ),
+                duration=max(30, len(scenes) * 6),
+            )
+        return "ambient background music"
+
+    def _resolve_global_bgm_source(self, bgm_query: str) -> Optional[Path]:
+        bgm_out = self.run_manager.get_audio_output_dir() / "bgm_source.mp3"
+        cached_bgm = self.run_manager.get_cached_bgm(bgm_query, scope="global")
+        if cached_bgm and cached_bgm.exists():
+            self.bgm_metadata = {
+                "source": "cache",
+                "query": bgm_query,
+                "query_used": bgm_query,
+                "name": cached_bgm.name,
+                "path": str(cached_bgm),
+            }
+            logger.info(f"[Audio] Cache Hit for global BGM query '{bgm_query}' -> {cached_bgm.name}")
+            return cached_bgm
+
         path, meta = search_and_download_bgm(
-            mood_query=mood, output_path=bgm_out,
-            api_key=self.freesound_api_key, use_fallback=True,
+            mood_query=bgm_query,
+            output_path=bgm_out,
+            api_key=self.freesound_api_key,
+            use_fallback=True,
         )
         if path and path.exists():
-            self.bgm_metadata[scene_id] = meta or {"source": "fallback"}
+            self.bgm_metadata = meta or {"source": "fallback", "query": bgm_query}
+            self.bgm_metadata.setdefault("query", bgm_query)
+            self.bgm_metadata.setdefault("query_used", bgm_query)
+            if meta and meta.get("source") == "freesound":
+                self.run_manager.save_bgm_to_cache(bgm_query, path, scope="global")
             return path
-        return BGMLocator.get_fallback_bgm()
+
+        fallback = BGMLocator.get_fallback_bgm()
+        if fallback:
+            self.bgm_metadata = {
+                "source": "local_fallback",
+                "query": bgm_query,
+                "query_used": "local_fallback",
+                "name": fallback.name,
+                "path": str(fallback),
+            }
+            logger.warning(f"[Audio] Using local fallback BGM: {fallback.name}")
+            return fallback
+
+        self.bgm_metadata = {
+            "source": "silence",
+            "query": bgm_query,
+            "query_used": "none",
+        }
+        logger.warning("[Audio] No BGM source available; continuing without BGM")
+        return None
+
+    def _render_global_bgm(self, bgm_source: Optional[Path], total_duration_ms: int) -> Optional[Path]:
+        if not bgm_source or not bgm_source.exists() or total_duration_ms <= 0:
+            return None
+
+        try:
+            source = _decode_audio_to_segment(bgm_source)
+            source = _trim_leading_silence(source)
+            if len(source) <= 0:
+                logger.warning("[Audio] BGM source is empty after trimming silence")
+                return None
+
+            target_ms = max(1, int(total_duration_ms))
+            looped = AudioSegment.empty()
+            while len(looped) < target_ms:
+                looped += source
+            looped = looped[:target_ms]
+            if len(looped) > 1500:
+                looped = looped.fade_out(1500)
+            if self.bgm_volume and self.bgm_volume != 1.0:
+                gain_db = 20.0 * math.log10(max(self.bgm_volume, 0.001))
+                looped = looped.apply_gain(gain_db)
+
+            bgm_out = self.run_manager.get_audio_output_dir() / "bgm_final.mp3"
+            _export_segment_as_mp3(looped, bgm_out)
+            logger.info(f"[Audio] Global BGM rendered for {target_ms / 1000:.1f}s -> {bgm_out.name}")
+            return bgm_out
+        except Exception as e:
+            logger.warning(f"[Audio] Failed to render global BGM: {e}")
+            return None
+
+    def _mix_master_with_bgm(self, voice_master: Optional[Path], bgm_track: Optional[Path]) -> Optional[Path]:
+        if not voice_master or not Path(voice_master).exists():
+            return bgm_track if bgm_track and bgm_track.exists() else None
+        if not bgm_track or not bgm_track.exists():
+            return voice_master
+
+        try:
+            voice = _decode_audio_to_segment(voice_master)
+            bgm = _decode_audio_to_segment(bgm_track)
+            if len(bgm) < len(voice):
+                repeats = (len(voice) // max(1, len(bgm))) + 1
+                bgm = bgm * repeats
+            bgm = bgm[: len(voice)]
+            if len(bgm) > 1500:
+                bgm = bgm.fade_out(1500)
+            mixed = voice.overlay(bgm)
+            _export_segment_as_mp3(mixed, voice_master)
+            logger.info(f"[Audio] Master track mixed with shared BGM: {Path(voice_master).name}")
+            return voice_master
+        except Exception as e:
+            logger.warning(f"[Audio] Failed to mix master with BGM: {e}; using voice master only")
+            return voice_master
 
     # ── Layer ─────────────────────────────────────────────────────────────────
 
@@ -273,6 +451,8 @@ class EnhancedAudioAgent:
         scene_files: List[Path] = []
         cumulative_ms = 0
         MP, _ = _load_moviepy()
+        self.global_bgm_query = self._get_global_bgm_query(scenes)
+        self.global_bgm_source = self._resolve_global_bgm_source(self.global_bgm_query)
 
         for scene in scenes:
             scene_id = scene.get("scene_id")
@@ -288,10 +468,7 @@ class EnhancedAudioAgent:
                 logger.warning(f"[Audio] Skipping scene {scene_id} — no voice audio")
                 continue
 
-            mood = self._get_mood_query(scene)
-            bgm_file = self._fetch_bgm(mood, scene_id)
-
-            composed = self._layer(voice_file, bgm_file, scene_id) if (bgm_file and bgm_file.exists()) else voice_file
+            composed = voice_file
 
             if composed and composed.exists():
                 scene_files.append(composed)
@@ -312,7 +489,7 @@ class EnhancedAudioAgent:
                             "duration_ms": dur,
                             "cumulative_start_ms": cumulative_ms,
                             "scene_duration_ms":   scene_dur_ms,
-                            "bgm_used":    scene_id in self.bgm_metadata,
+                            "bgm_used":    bool(self.global_bgm_source),
                             "audio_file":  str(composed),
                             "individual_audio_file": d.get("audio_file", ""),
                         })
@@ -324,17 +501,26 @@ class EnhancedAudioAgent:
         if not scene_files:
             return {"status": "failure", "error": "No scene audio generated"}
 
-        master = self._master_track(scene_files)
+        voice_master = self._master_track(scene_files)
+        bgm_track = self._render_global_bgm(self.global_bgm_source, cumulative_ms)
+        master = self._mix_master_with_bgm(voice_master, bgm_track)
         manifest_path = self.run_manager.save_timing_manifest(self.cumulative_timing)
         bgm_meta_path = self.run_manager.save_bgm_metadata(
-            {"scenes": self.bgm_metadata, "total_scenes_with_bgm": len(self.bgm_metadata)}
+            {
+                "mode": "single_global_track",
+                "query": self.global_bgm_query,
+                "source": self.bgm_metadata,
+                "global_bgm_source": str(self.global_bgm_source) if self.global_bgm_source else None,
+                "final_bgm_track": str(bgm_track) if bgm_track else None,
+                "total_video_duration_ms": cumulative_ms,
+            }
         )
         summary = {
             "timestamp":        datetime.now().isoformat(),
             "run_id":           self.run_manager.current_run_id,
             "total_scenes":     len(scenes),
             "scenes_processed": len(scene_files),
-            "scenes_with_bgm":  len(self.bgm_metadata),
+            "scenes_with_bgm":  1 if bgm_track else 0,
             "master_audio":     str(master) if master else None,
             "character_voices": self.voice_mapper.get_all_character_voices(),
         }
@@ -344,6 +530,11 @@ class EnhancedAudioAgent:
             "freesound_available": bool(self.freesound_api_key),
             "audio_engine": "moviepy+edge-tts",
             "voice_mappings": self.voice_mapper.get_all_character_voices(),
+            "bgm_mode": "single_global_track",
+            "global_bgm_query": self.global_bgm_query,
+            "global_bgm_source": str(self.global_bgm_source) if self.global_bgm_source else None,
+            "final_bgm_track": str(bgm_track) if bgm_track else None,
+            "total_video_duration_ms": cumulative_ms,
         })
 
         logger.info("\n✨ PHASE 2 COMPLETE")
@@ -352,13 +543,20 @@ class EnhancedAudioAgent:
             "run_id":               self.run_manager.current_run_id,
             "total_scenes":         len(scenes),
             "scenes_processed":     len(scene_files),
-            "scenes_with_bgm":      len(self.bgm_metadata),
+            "scenes_with_bgm":      1 if bgm_track else 0,
             "total_duration_ms":    cumulative_ms,
             "master_audio_track":   str(master) if master else None,
             "output_directory":     str(self.run_manager.current_run_dir),
             "timing_manifest_path": str(manifest_path),
             "character_voices_used": self.voice_mapper.get_all_character_voices(),
-            "bgm_metadata":         {"scenes": self.bgm_metadata, "total": len(self.bgm_metadata)},
+            "bgm_metadata":         {
+                "mode": "single_global_track",
+                "query": self.global_bgm_query,
+                "source": self.bgm_metadata,
+                "global_bgm_source": str(self.global_bgm_source) if self.global_bgm_source else None,
+                "final_bgm_track": str(bgm_track) if bgm_track else None,
+                "total_video_duration_ms": cumulative_ms,
+            },
         }
 
 

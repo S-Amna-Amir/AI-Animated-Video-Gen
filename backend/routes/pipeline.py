@@ -230,14 +230,17 @@ async def _run_phase1_resume(job_id: str, req: Phase1ResumeRequest):
         # ── Done ───────────────────────────────────────────────────────────
         script = state.get("script", {})
         chars  = state.get("characters", [])
+        project_run_id = script.get("_project_run_id", "")
         jobs.log(job_id, f"Characters built : {len(chars)}")
         jobs.set_complete(job_id, result={
-            "title":        script.get("title"),
-            "total_scenes": script.get("total_scenes"),
-            "characters":   len(chars),
-            "output_dir":   "data/outputs",
+            "title":          script.get("title"),
+            "total_scenes":   script.get("total_scenes"),
+            "characters":     len(chars),
+            "output_dir":     "data/outputs",
+            "project_run_id": project_run_id,
+            "project_dir":    str(Path("data/runs") / project_run_id) if project_run_id else "",
         })
-        jobs.log(job_id, "Phase 1 complete ✓")
+        jobs.log(job_id, f"Phase 1 complete ✓  project={project_run_id or '(no run id)'}")
 
     except asyncio.CancelledError:
         # Server is shutting down mid-run — mark failed so the UI doesn't
@@ -268,11 +271,23 @@ async def _run_phase2(job_id: str, req: Phase2Request):
     jobs.set_running(job_id)
     try:
         jobs.log(job_id, "Phase 2 starting | TTS + BGM synthesis")
-        from agents.audio_agent.enhanced_agent import EnhancedAudioAgent
 
+        # ── Resolve project folder from latest PipelineRunManager ─────────────
+        from agents.pipeline_run_manager import PipelineRunManager
+        pm = PipelineRunManager.latest()
+        if pm:
+            phase2_out = str(pm.phase2_dir)
+            phase1_in  = str(pm.phase1_dir)
+            jobs.log(job_id, f"Project: {pm.title!r}  →  {pm.phase2_dir}")
+        else:
+            phase2_out = req.phase2_dir      # legacy fallback
+            phase1_in  = req.phase1_dir
+            jobs.log(job_id, "No project session found — using legacy paths")
+
+        from agents.audio_agent.enhanced_agent import EnhancedAudioAgent
         agent = EnhancedAudioAgent(
-            phase1_data_dir=req.phase1_dir,
-            phase2_output_dir=req.phase2_dir,
+            phase1_data_dir=phase1_in,
+            phase2_output_dir=phase2_out,
             freesound_api_key=req.freesound_api_key,
         )
         jobs.log(job_id, f"Agent ready | run={agent.run_manager.current_run_id}")
@@ -280,9 +295,14 @@ async def _run_phase2(job_id: str, req: Phase2Request):
         result = await agent.process()
 
         if result.get("status") != "success":
+            if pm:
+                pm.mark_phase_failed(2, result.get("error", "unknown"))
             jobs.set_failed(job_id, result.get("error", "Unknown error"))
             jobs.log(job_id, f"FAILED: {result.get('error')}")
             return
+
+        if pm:
+            pm.mark_phase_complete(2)
 
         jobs.log(job_id, f"Scenes processed : {result['scenes_processed']}/{result['total_scenes']}")
         jobs.log(job_id, f"Scenes with BGM  : {result['scenes_with_bgm']}")
@@ -293,6 +313,7 @@ async def _run_phase2(job_id: str, req: Phase2Request):
             "master_audio":    result.get("master_audio_track"),
             "output_dir":      result["output_directory"],
             "duration_ms":     result["total_duration_ms"],
+            "project_run_id":  pm.run_id if pm else "",
         })
         jobs.log(job_id, "Phase 2 complete ✓")
 
@@ -327,32 +348,56 @@ async def _run_phase3(job_id: str, req: Phase3Request):
         mode_label = "SHORT" if req.short_mode else "FULL"
         jobs.log(job_id, f"Phase 3 starting | mode={mode_label} mock={req.mock}")
 
-        # Resolve Phase 2 run dir
-        phase2_run = req.phase2_run or _latest_run("data/outputs/Phase2")
-        jobs.log(job_id, f"Phase 2 run: {phase2_run}")
+        # ── Resolve project folder ─────────────────────────────────────────────
+        from agents.pipeline_run_manager import PipelineRunManager
+        from agents.video_agent.run_manager import VideoRunManager
+        from agents.video_agent.agent import VideoAgent
 
-        if req.short_mode:
-            from agents.video_agent.agent import VideoAgent as _VA
-            class AgentClass(_VA):
-                def load_phase1_output(self, phase1_dir='data/outputs'):
-                    data = super().load_phase1_output(phase1_dir)
-                    if data.get('scenes'):
-                        data['scenes'] = [data['scenes'][0]]
-                    return data
-                def load_phase2_manifest(self, phase2_run_dir):
-                    m = super().load_phase2_manifest(phase2_run_dir)
-                    if m:
-                        first_sid = m[0].get('scene_id')
-                        m = [e for e in m if e.get('scene_id') == first_sid][:3]
-                    return m
+        pm = PipelineRunManager.latest()
+        if pm:
+            phase1_in  = str(pm.phase1_dir)
+            # Phase 2 writes directly into phase2/ — no run_XX subdir
+            phase2_run = req.phase2_run or str(pm.phase2_dir)
+            # Phase 3 also writes directly into phase3/ — no run_XX subdir
+            video_mgr  = VideoRunManager(base_output_dir=str(pm.phase3_dir))
+            jobs.log(job_id, f"Project: {pm.title!r}  →  {pm.phase3_dir}")
         else:
-            from agents.video_agent.agent import VideoAgent as AgentClass
+            phase1_in  = req.phase1_dir
+            phase2_run = req.phase2_run or _latest_run("data/outputs/Phase2")
+            video_mgr  = VideoRunManager()
+            jobs.log(job_id, "No project session — using legacy paths")
 
-        agent  = AgentClass()
+        jobs.log(job_id, f"Phase 2 source: {phase2_run}")
+
+        # Create the VideoAgent using our chosen run manager
+        run_id, run_dir_str = video_mgr.create_run_dir()
+        agent = VideoAgent(run_id=run_id, base_output_dir=str(Path(run_dir_str).parent))
+
+        # Short mode: slice scenes/manifest to 1 scene / 3 lines
+        if req.short_mode:
+            _orig_load_p1 = agent.load_phase1_output
+            _orig_load_p2 = agent.load_phase2_manifest
+
+            def _short_p1(phase1_dir="data/outputs"):
+                data = _orig_load_p1(phase1_in)
+                if data.get("scenes"):
+                    data["scenes"] = [data["scenes"][0]]
+                return data
+
+            def _short_p2(phase2_run_dir):
+                m = _orig_load_p2(phase2_run_dir)
+                if m:
+                    first_sid = m[0].get("scene_id")
+                    m = [e for e in m if e.get("scene_id") == first_sid][:3]
+                return m
+
+            agent.load_phase1_output  = _short_p1
+            agent.load_phase2_manifest = _short_p2
+
         result = await asyncio.get_event_loop().run_in_executor(
             None,
             lambda: agent.run(
-                phase1_dir=req.phase1_dir,
+                phase1_dir=phase1_in,
                 phase2_run_dir=phase2_run,
                 mock=req.mock,
                 use_subtitles=req.use_subtitles,
@@ -361,23 +406,30 @@ async def _run_phase3(job_id: str, req: Phase3Request):
         )
 
         if result.get("status") == "failed":
+            if pm:
+                pm.mark_phase_failed(3, "; ".join(result.get("errors", [])))
             jobs.set_failed(job_id, "; ".join(result.get("errors", ["Unknown"])))
             jobs.log(job_id, f"FAILED: {result.get('errors')}")
             return
+
+        if pm:
+            pm.mark_phase_complete(3)
 
         imgs  = result.get("scene_images", {})
         clips = result.get("scene_clips", {})
         jobs.log(job_id, f"Images  : {sum(1 for p in imgs.values() if p)}/{len(imgs)}")
         jobs.log(job_id, f"Clips   : {sum(1 for p in clips.values() if p)}/{len(clips)}")
         jobs.log(job_id, f"Video   : {result.get('final_video')}")
+
         jobs.set_complete(job_id, result={
-            "run_id":        result["run_id"],
-            "final_video":   result.get("final_video"),
-            "use_subtitles": result.get("use_subtitles", False),
-            "status":        result["status"],
-            "run_dir":       str(Path("data/outputs/Phase3") / result["run_id"]),
+            "run_id":          result["run_id"],
+            "final_video":     result.get("final_video"),
+            "use_subtitles":   result.get("use_subtitles", False),
+            "status":          result["status"],
+            "run_dir":         str(agent.run_dir),
+            "project_run_id":  pm.run_id if pm else "",
         })
-        jobs.log(job_id, f"Phase 3 {result['status']} ✓")
+        jobs.log(job_id, f"Phase 3 {result['status']} ✓  run_dir={agent.run_dir}")
 
     except Exception as e:
         tb = traceback.format_exc()

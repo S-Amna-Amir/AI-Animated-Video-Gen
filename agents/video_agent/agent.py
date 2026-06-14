@@ -37,9 +37,10 @@ _CHAR_DB_NAMES = [
 
 
 class VideoAgent:
-    def __init__(self, run_id: Optional[str] = None):
+    def __init__(self, run_id: Optional[str] = None, base_output_dir: Optional[str] = None):
         from agents.video_agent.run_manager import VideoRunManager
-        manager = VideoRunManager()
+        manager = VideoRunManager(base_output_dir=base_output_dir) if base_output_dir \
+                  else VideoRunManager()
         if run_id:
             self.run_id  = run_id
             self.run_dir = manager.base_output_dir / run_id
@@ -106,7 +107,10 @@ class VideoAgent:
             self.logger.warning("Phase 2 manifest not found: %s", manifest_path)
             return []
         try:
-            return video_compositor.load_timing_manifest(str(manifest_path))
+            manifest = video_compositor.load_timing_manifest(str(manifest_path))
+            for idx, entry in enumerate(manifest):
+                entry["line_index"] = idx
+            return manifest
         except Exception as e:
             self.logger.warning("Failed loading Phase 2 manifest: %s", e)
             return []
@@ -142,6 +146,8 @@ class VideoAgent:
                     "cumulative_start_ms": cursor,
                 })
                 cursor += dur
+        for idx, entry in enumerate(manifest):
+            entry["line_index"] = idx
         return manifest
 
     # ── Main pipeline ─────────────────────────────────────────────────────────

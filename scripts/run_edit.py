@@ -38,12 +38,21 @@ async def run_edit(query: str) -> None:
 
     print(f"\n{'='*60}")
     if result["success"]:
-        print(f"  ✅ Edit complete")
+        print(f"  SUCCESS: Edit complete")
         intent = result["intent"]
         print(f"  Intent   : {intent['intent']} -> {intent['target']} (scope: {intent['scope']})")
         print(f"  Snapshot : v{result['snapshot_before']:03d} -> v{result['snapshot_after']:03d}")
+        
+        # Find final video output path if any
+        final_video_path = None
+        for step in result["execution"].get("steps", []):
+            step_res = step.get("result")
+            if isinstance(step_res, dict) and "final_video" in step_res:
+                final_video_path = step_res["final_video"]
+        if final_video_path:
+            print(f"  New Output Video: {final_video_path}")
     else:
-        print(f"  ❌ Edit failed: {result.get('error')}")
+        print(f"  FAILED: Edit failed: {result.get('error')}")
     print(f"{'='*60}\n")
 
 
@@ -52,10 +61,10 @@ def run_undo(version: int) -> None:
     agent  = EditAgent()
     result = agent.undo(version)
     if result["success"]:
-        print(f"✅ Reverted to v{version:03d} -> new version v{result['new_version']:03d}")
+        print(f"SUCCESS: Reverted to v{version:03d} -> new version v{result['new_version']:03d}")
         print(f"   Assets restored: {result['restored_assets']}")
     else:
-        print(f"❌ Revert failed: {result.get('error')}")
+        print(f"FAILED: Revert failed: {result.get('error')}")
 
 
 def show_history() -> None:
