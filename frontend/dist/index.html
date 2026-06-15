@@ -509,7 +509,7 @@ function Phase3Page() {
   // Use project_run_id if available, fall back to run_id
   const videoSrc = job?.result
     ? job.result.project_run_id
-      ? `/api/files/project/${job.result.project_run_id}/video`
+      ? `/api/files/project/${job.result.project_run_id}/video?captioned=${!!job.result.use_subtitles}`
       : job.result.use_subtitles
         ? `/api/files/video/${job.result.run_id}/captioned`
         : `/api/files/video/${job.result.run_id}`
