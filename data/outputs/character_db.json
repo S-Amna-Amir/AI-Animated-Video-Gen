@@ -1,30 +1,30 @@
 [
   {
-    "name": "TOM",
+    "name": "OWAIS",
     "personality": "terse",
-    "appearance": "TOM, a man in his late 30s to early 40s, presents a rugged, no-nonsense appearance, often dressed in practical, minimalist attire such as plain t-shirts and worn jeans. His short, dark hair is often neatly trimmed, framing his sharp features and intense gaze. A distinctive scar above his left eyebrow and a sharp jawline add to his rugged, terse demeanor, completing the overall aesthetic of a man who values function over form.",
-    "style_reference": "Cinematic cinematic portrait reference for 'TOM': terse, professional lighting, sharp focus, photorealistic.",
+    "appearance": "OWAIS is a man in his late 30s to early 40s, with a rugged and imposing presence. He has a distinctive buzz cut and a sharp jawline, often dressed in functional, minimalist attire such as dark jeans and a plain white or black shirt. A scattering of scars above his left eyebrow and a silver watch on his wrist are notable distinguishing features that add to his terse and rugged persona.",
+    "style_reference": "Cinematic cinematic portrait reference for 'OWAIS': terse, professional lighting, sharp focus, photorealistic.",
+    "image_path": null
+  },
+  {
+    "name": "AREEBA",
+    "personality": "measured",
+    "appearance": "AREEBA is a character in her mid-to-late 20s, with a polished and refined appearance that reflects her measured personality. She has long, dark hair that is often styled in a sleek, low bun, and her clothing style is minimalist chic, favoring tailored blazers and crisp white shirts that accentuate her slender frame. AREEBA's distinguishing features include her sharp jawline, piercing brown eyes, and a small, delicate nose ring that adds a touch of understated elegance to her overall aesthetic.",
+    "style_reference": "Cinematic cinematic portrait reference for 'AREEBA': measured, professional lighting, sharp focus, photorealistic.",
+    "image_path": null
+  },
+  {
+    "name": "TOM",
+    "personality": "measured",
+    "appearance": "TOM is a character in his mid-to-late 30s, with a measured demeanor reflected in his polished, professional attire, often consisting of tailored suits and crisp white shirts. His dark hair is always impeccably styled, cut short to accentuate his sharp jawline and piercing brown eyes, which seem to bore into those he meets. A distinctive scar above his left eyebrow adds a hint of ruggedness to his otherwise refined features, underscoring a sense of depth and complexity to his character.",
+    "style_reference": "Cinematic cinematic portrait reference for 'TOM': measured, professional lighting, sharp focus, photorealistic.",
     "image_path": null
   },
   {
     "name": "JERRY",
     "personality": "measured, emotionally driven",
-    "appearance": "Jerry, a character in his mid-to-late 30s, presents a introspective exterior with a wardrobe that reflects his measured approach to life, often dressed in understated, earth-toned attire with clean lines and minimal patterns. His dark brown hair is typically styled in a neat, low-maintenance manner, framing his angular face and intense, emotionally driven eyes that seem to hold a deep well of feeling. A scattering of subtle scars above his left eyebrow and a sharp jawline add a sense of rugged depth to his otherwise restrained appearance.",
+    "appearance": "Jerry, a man in his mid-to-late 30s, presents a measured exterior with a wardrobe that reflects his introspective nature, often dressing in muted, earthy tones with clean lines and minimal embellishments. His dark hair is typically styled in a neat, understated manner, framing his expressive features, including piercing brown eyes that convey the depth of his emotionally driven personality. A scattering of subtle, fine lines around his eyes and mouth serve as a distinguishing feature, hinting at a life of quiet intensity and inner turmoil.",
     "style_reference": "Cinematic cinematic portrait reference for 'JERRY': measured, emotionally driven, professional lighting, sharp focus, photorealistic.",
-    "image_path": null
-  },
-  {
-    "name": "AREEBA",
-    "personality": "measured, urgent",
-    "appearance": "AREEBA is a woman in her late 20s to early 30s, with a measured yet urgent presence, reflected in her practical and efficient clothing style, often wearing sleek, modern attire with a focus on functionality. Her dark hair is typically pulled back in a tight, low ponytail, accentuating her sharp features and piercing eyes. A small scar above her left eyebrow and a silver watch on her wrist are distinguishing features that add to her sense of determination and purpose.",
-    "style_reference": "Cinematic cinematic portrait reference for 'AREEBA': measured, urgent, professional lighting, sharp focus, photorealistic.",
-    "image_path": null
-  },
-  {
-    "name": "OWAIS",
-    "personality": "measured, urgent",
-    "appearance": "OWAIS is a character in his mid-to-late 30s, with a measured yet urgent presence, reflected in his sharp, modern attire that exudes a sense of professionalism. His dark hair is styled in a neat, polished manner, often slicked back to reveal a prominent forehead and intense, focused eyes. A distinctive scar above his left eyebrow and a silver watch on his wrist add a touch of ruggedness and sophistication to his overall appearance.",
-    "style_reference": "Cinematic cinematic portrait reference for 'OWAIS': measured, urgent, professional lighting, sharp focus, photorealistic.",
     "image_path": null
   }
 ]

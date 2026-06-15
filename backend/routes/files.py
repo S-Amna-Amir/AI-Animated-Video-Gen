@@ -117,9 +117,11 @@ async def get_project_video(run_id: str, captioned: bool = False):
     if not pm:
         raise HTTPException(status_code=404, detail=f"Project '{run_id}' not found")
     if pm.phase3_dir.exists():
-        # Order depends on whether captioned was requested
-        names = ("final_output_captioned.mp4", "final_output.mp4") if captioned \
-                else ("final_output.mp4", "final_output_captioned.mp4")
+        # Actual naming convention:
+        #   final_output_captioned.mp4           — base video (no subtitle burn-in)
+        #   final_output_captioned_captioned.mp4 — subtitle burn-in version
+        names = ("final_output_captioned_captioned.mp4", "final_output_captioned.mp4") if captioned \
+                else ("final_output_captioned.mp4", "final_output_captioned_captioned.mp4")
         for name in names:
             candidates = sorted(
                 pm.phase3_dir.rglob(name),

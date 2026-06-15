@@ -1,47 +1,47 @@
 {
-  "title": "Turbulent Flight",
+  "title": "Flight Frenzy",
   "genre": "Drama",
   "total_scenes": 5,
   "scenes": [
     {
       "scene_id": 1,
-      "location": "INT. PLANE CABIN - DAY",
+      "location": "INT. PLANE COCKPIT - DAY",
       "characters": [
-        "Tom",
-        "Jerry",
+        "Owais",
         "Areeba"
       ],
-      "action_description": "Tom and Jerry are sitting in their seats, while Areeba is walking down the aisle to check on the passengers.",
+      "action_description": "Owais checks the controls while Areeba reviews the safety procedures",
       "dialogue": [
         {
+          "speaker": "Owais",
+          "line": "Everything looks good for takeoff",
+          "visual_cue": "Medium shot of Owais with a soft, warm light"
+        },
+        {
           "speaker": "Areeba",
-          "line": "Can I get you two anything to drink?",
-          "visual_cue": "Medium shot of Areeba with soft natural lighting"
-        },
-        {
-          "speaker": "Tom",
-          "line": "Just water, please.",
-          "visual_cue": "Close-up of Tom with a slight smile and warm lighting"
-        },
-        {
-          "speaker": "Jerry",
-          "line": "And I'll have some peanuts.",
-          "visual_cue": "Wide shot of Jerry looking excited with bright overhead lighting"
+          "line": "I'll start the safety briefing",
+          "visual_cue": "Wide shot of Areeba with a bright, overhead light"
         }
       ]
     },
     {
       "scene_id": 2,
-      "location": "INT. COCKPIT - DAY",
+      "location": "INT. PLANE CABIN - DAY",
       "characters": [
-        "Owais"
+        "Tom",
+        "Jerry"
       ],
-      "action_description": "Owais is sitting in the pilot's seat, navigating the plane through the sky.",
+      "action_description": "Tom and Jerry find their seats and get settled",
       "dialogue": [
         {
-          "speaker": "Owais",
-          "line": "Mayday, mayday, we're experiencing some turbulence.",
-          "visual_cue": "Close-up of Owais with a serious expression and dim red lighting"
+          "speaker": "Tom",
+          "line": "I'm so excited for this flight, I've never been on a plane before",
+          "visual_cue": "Close-up of Tom's face with a shallow depth of field"
+        },
+        {
+          "speaker": "Jerry",
+          "line": "Me neither, I hope I don't get motion sickness",
+          "visual_cue": "Over-the-shoulder shot of Jerry with a soft, natural light"
         }
       ]
     },
@@ -49,41 +49,36 @@
       "scene_id": 3,
       "location": "INT. PLANE CABIN - DAY",
       "characters": [
+        "Areeba",
         "Tom",
-        "Jerry",
-        "Areeba"
+        "Jerry"
       ],
-      "action_description": "The plane hits turbulence, causing the passengers to stumble and lose their balance.",
+      "action_description": "Areeba starts the safety briefing while Tom and Jerry listen intently",
       "dialogue": [
         {
           "speaker": "Areeba",
-          "line": "Please fasten your seatbelts, we're experiencing some turbulence.",
-          "visual_cue": "Wide shot of Areeba holding onto the seats with a concerned expression and shaky camera movement"
+          "line": "In the unlikely event of an emergency, your inflatable life vest can be found under your seat",
+          "visual_cue": "Medium shot of Areeba with a calm, gentle lighting"
         },
         {
           "speaker": "Tom",
-          "line": "This is not good.",
-          "visual_cue": "Medium shot of Tom with a worried look and harsh lighting"
-        },
-        {
-          "speaker": "Jerry",
-          "line": "I've got a bad feeling about this.",
-          "visual_cue": "Close-up of Jerry with a frightened expression and high contrast lighting"
+          "line": "What's that noise?",
+          "visual_cue": "Close-up of Tom's ear with a sharp, high-contrast lighting"
         }
       ]
     },
     {
       "scene_id": 4,
-      "location": "INT. COCKPIT - DAY",
+      "location": "INT. PLANE COCKPIT - DAY",
       "characters": [
         "Owais"
       ],
-      "action_description": "Owais is trying to regain control of the plane, sweat dripping down his face.",
+      "action_description": "Owais checks the controls and notices a problem",
       "dialogue": [
         {
           "speaker": "Owais",
-          "line": "Come on, come on, don't fail me now.",
-          "visual_cue": "Close-up of Owais with a determined expression and intense lighting"
+          "line": "Mayday, mayday, we're experiencing engine trouble",
+          "visual_cue": "Wide shot of Owais with a dramatic, low-key lighting"
         }
       ]
     },
@@ -95,22 +90,17 @@
         "Jerry",
         "Areeba"
       ],
-      "action_description": "The turbulence subsides, and the passengers breathe a sigh of relief.",
+      "action_description": "The plane hits turbulence and Tom, Jerry, and Areeba hold on tight",
       "dialogue": [
         {
-          "speaker": "Areeba",
-          "line": "We're clear, everyone. You can unfasten your seatbelts now.",
-          "visual_cue": "Wide shot of Areeba with a relieved smile and warm lighting"
-        },
-        {
           "speaker": "Tom",
-          "line": "That was close.",
-          "visual_cue": "Medium shot of Tom with a shaken expression and soft lighting"
+          "line": "This is not good, we're going to crash!",
+          "visual_cue": "Handheld shot of Tom with a shaky, high-contrast lighting"
         },
         {
-          "speaker": "Jerry",
-          "line": "I never want to fly again.",
-          "visual_cue": "Close-up of Jerry with a traumatized look and muted colors"
+          "speaker": "Areeba",
+          "line": "Please remain calm, we're doing everything we can to ensure your safety",
+          "visual_cue": "Medium shot of Areeba with a reassuring, warm light"
         }
       ]
     }
