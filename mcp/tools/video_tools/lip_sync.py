@@ -27,6 +27,39 @@ WAV2LIP_IMG_SIZE = 96
 MEL_STEP_SIZE    = 16
 DEFAULT_FPS      = 25.0
 
+_wav2lip_model = None
+_wav2lip_device = None
+
+def _get_wav2lip_model():
+    """Load Wav2Lip once and cache it for the process lifetime."""
+    global _wav2lip_model, _wav2lip_device
+    if _wav2lip_model is not None:
+        return _wav2lip_model, _wav2lip_device
+
+    ckpt = os.getenv("WAV2LIP_CHECKPOINT", "checkpoints/wav2lip_gan.pth")
+    if not Path(ckpt).exists():
+        return None, None
+
+    try:
+        import torch, importlib.util, sys
+        repo = os.getenv("WAV2LIP_REPO_PATH", "Wav2Lip")
+        if repo not in sys.path:
+            sys.path.insert(0, str(Path(repo).resolve()))
+        from models import Wav2Lip as W2L
+
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        model  = W2L()
+        ckpt_data = torch.load(ckpt, map_location=device)
+        model.load_state_dict(ckpt_data["state_dict"])
+        model = model.to(device).eval()
+        logger.info("[LipSync] Wav2Lip loaded on %s (cached for session)", device)
+
+        _wav2lip_model  = model
+        _wav2lip_device = device
+        return model, device
+    except Exception as e:
+        logger.warning("[LipSync] Wav2Lip model load failed: %s", e)
+        return None, None
 
 def align_lip_sync(
     scene_id: int,
@@ -57,88 +90,107 @@ def align_lip_sync(
 # ── Backend 1: Wav2Lip ────────────────────────────────────────────────────────
 
 def _try_wav2lip(scene_id, audio_path, frame_dir, output_video_path, fps):
-    ckpt = os.getenv("WAV2LIP_CHECKPOINT", "checkpoints/wav2lip_gan.pth")
-    if not Path(ckpt).exists():
+    model, device = _get_wav2lip_model()
+    if model is None:
         if not getattr(_try_wav2lip, "_warned", False):
             logger.info(
-                "[LipSync] Wav2Lip checkpoint not found at '%s'. "
-                "Falling back to OpenCV mux. See lip_sync.py docstring to enable.", ckpt
+                "[LipSync] Wav2Lip not available. "
+                "Falling back to OpenCV mux. See lip_sync.py docstring to enable."
             )
             _try_wav2lip._warned = True
         return None
+
     try:
         import cv2, numpy as np, torch, librosa, importlib.util, sys
 
         repo = os.getenv("WAV2LIP_REPO_PATH", "Wav2Lip")
-        if repo not in sys.path:
-            sys.path.insert(0, str(Path(repo).resolve()))
-
-        spec = importlib.util.spec_from_file_location("wav2lip_audio", str(Path(repo) / "audio.py"))
-        wa   = importlib.util.module_from_spec(spec); spec.loader.exec_module(wa)
-        from models import Wav2Lip as W2L
-
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        model  = W2L()
-        ckpt_data = torch.load(ckpt, map_location=device)
-        model.load_state_dict(ckpt_data["state_dict"])
-        model = model.to(device).eval()
-        logger.info("[LipSync] Wav2Lip loaded on %s", device)
+        spec = importlib.util.spec_from_file_location(
+            "wav2lip_audio", str(Path(repo) / "audio.py")
+        )
+        wa = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(wa)
 
         frame_paths = sorted(Path(frame_dir).glob("frame_*.png"))
         if not frame_paths:
             return None
 
         wav, _ = librosa.load(audio_path, sr=16000, mono=True)
-        mel    = wa.melspectrogram(wav)
+
+        # Compute mel — handle API differences across Wav2Lip versions
+        try:
+            mel = wa.melspectrogram(wav)
+        except TypeError:
+            try:
+                mel = wa.melspectrogram(wav, getattr(wa, 'num_mels', 80))
+            except Exception:
+                mel = librosa.feature.melspectrogram(
+                    y=wav, sr=16000, n_fft=800, hop_length=200,
+                    win_length=800, n_mels=80, fmax=7600
+                )
+                mel = librosa.power_to_db(mel, ref=np.max).astype(np.float32)
+
         mel_chunks = _align_mel(mel, len(frame_paths), fps)
         actual_n   = min(len(frame_paths), len(mel_chunks))
 
-        detector  = _load_face_detector()
+        detector   = _load_face_detector()
         out_frames = []
         batch_size = 8
 
         for bs in range(0, actual_n, batch_size):
             be = min(bs + batch_size, actual_n)
-            imgs, mels, origs, rects = [], [], [], []
+            imgs, mels_batch, origs, rects = [], [], [], []
             for idx in range(bs, be):
                 bgr = cv2.imread(str(frame_paths[idx]))
-                if bgr is None: continue
+                if bgr is None:
+                    continue
                 rect = _detect_face(bgr, detector) or (
                     bgr.shape[1]//4, bgr.shape[0]//4,
                     bgr.shape[1]*3//4, bgr.shape[0]*3//4
                 )
-                x1,y1,x2,y2 = rect
-                face = cv2.resize(bgr[y1:y2,x1:x2], (WAV2LIP_IMG_SIZE, WAV2LIP_IMG_SIZE))
-                masked = face.copy(); masked[WAV2LIP_IMG_SIZE//2:] = 0
+                x1, y1, x2, y2 = rect
+                face   = cv2.resize(bgr[y1:y2, x1:x2], (WAV2LIP_IMG_SIZE, WAV2LIP_IMG_SIZE))
+                masked = face.copy()
+                masked[WAV2LIP_IMG_SIZE//2:] = 0
                 imgs.append(np.concatenate([masked, face], axis=2))
-                mels.append(mel_chunks[idx]); origs.append(bgr); rects.append(rect)
+                mels_batch.append(mel_chunks[idx])
+                origs.append(bgr)
+                rects.append(rect)
 
-            if not imgs: continue
-            it = torch.FloatTensor(np.array(imgs)).permute(0,3,1,2).to(device)/255.0
-            mt = torch.FloatTensor(np.array(mels)).unsqueeze(1).to(device)
+            if not imgs:
+                continue
+
+            it = torch.FloatTensor(np.array(imgs)).permute(0,3,1,2).to(device) / 255.0
+            mt = torch.FloatTensor(np.array(mels_batch)).unsqueeze(1).to(device)
             with torch.no_grad():
-                pred = model(mt, it)
-            pred_np = (pred.permute(0,2,3,1).cpu().numpy()*255).astype(np.uint8)
+                pred = model(mt, it)   # reuse cached model — no reload
+            pred_np = (pred.permute(0,2,3,1).cpu().numpy() * 255).astype(np.uint8)
 
             for orig, (x1,y1,x2,y2), synth in zip(origs, rects, pred_np):
-                fh,fw = y2-y1, x2-x1
+                fh, fw = y2-y1, x2-x1
                 rf = orig.copy()
-                rf[y1:y2,x1:x2] = cv2.resize(synth,(fw,fh))
+                rf[y1:y2, x1:x2] = cv2.resize(synth, (fw, fh))
                 out_frames.append(rf)
 
-            logger.info("[LipSync] Wav2Lip scene %02d: batch %d-%d done", scene_id, bs, be-1)
+            logger.info(
+                "[LipSync] Wav2Lip scene %s: batch %d-%d done", scene_id, bs, be-1
+            )
 
         if not out_frames:
             return None
 
         dur = _write_video_with_audio(out_frames, audio_path, output_video_path, fps)
         return {
-            "scene_id": scene_id, "output_video_path": os.path.abspath(output_video_path),
-            "audio_path": audio_path, "frame_count": len(out_frames),
-            "duration_seconds": round(dur, 3), "sync_confidence": 0.92, "backend": "wav2lip",
+            "scene_id": scene_id,
+            "output_video_path": os.path.abspath(output_video_path),
+            "audio_path": audio_path,
+            "frame_count": len(out_frames),
+            "duration_seconds": round(dur, 3),
+            "sync_confidence": 0.92,
+            "backend": "wav2lip",
         }
+
     except Exception as e:
-        logger.warning("[LipSync] Wav2Lip failed scene %02d: %s", scene_id, e)
+        logger.warning("[LipSync] Wav2Lip failed scene %s: %s", scene_id, e)
         return None
 
 
