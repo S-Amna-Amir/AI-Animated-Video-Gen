@@ -446,6 +446,13 @@ function Phase2Page() {
     phase2_dir: 'data/outputs/Phase2',
   });
 
+  // Use project_run_id if available, fall back to run_id
+  const audioSrc = job?.result
+    ? job.result.project_run_id
+      ? `/api/files/project/${job.result.project_run_id}/audio`
+      : `/api/files/audio/${job.result.run_id}`
+    : null;
+
   return (
     <div>
       <div className="page-title">Phase 2 — Audio Generation</div>
@@ -471,9 +478,9 @@ function Phase2Page() {
               {Object.entries(job.result).map(([k,v])=>(
                 <div key={k} className="result-row"><span className="result-key">{k}</span><span className="result-val">{String(v)}</span></div>
               ))}
-              {job.result.run_id && job.result.master_audio && (
+              {audioSrc && (
                 <div style={{marginTop:12}}>
-                  <audio controls style={{width:'100%'}} src={`/api/files/audio/${job.result.run_id}`}/>
+                  <audio controls style={{width:'100%'}} src={audioSrc}/>
                 </div>
               )}
             </div>
@@ -499,6 +506,15 @@ function Phase3Page() {
     {phase1_dir: phase1Dir, mock, use_subtitles: subtitles, short_mode: short, use_lip_sync: lipSync}
   );
 
+  // Use project_run_id if available, fall back to run_id
+  const videoSrc = job?.result
+    ? job.result.project_run_id
+      ? `/api/files/project/${job.result.project_run_id}/video`
+      : job.result.use_subtitles
+        ? `/api/files/video/${job.result.run_id}/captioned`
+        : `/api/files/video/${job.result.run_id}`
+    : null;
+
   return (
     <div>
       <div className="page-title">Phase 3 — Video Generation</div>
@@ -515,7 +531,7 @@ function Phase3Page() {
             {[['mock','🖼 Mock images (no HF API)',mock,setMock],
               ['short','⚡ Short mode (1 scene)',short,setShort],
               ['subs','💬 Burn subtitles',subtitles,setSubtitles],
-              ['lipsync',  '👄 Lip sync (Wav2Lip)',lipSync,setLipSync],
+              ['lipsync','👄 Lip sync (Wav2Lip)',lipSync,setLipSync],
             ].map(([k,label,val,setter])=>(
               <button key={k} className={`toggle-btn ${val?'active':''}`} style={{flex:'0 0 auto',padding:'8px 14px'}} onClick={()=>setter(v=>!v)}>
                 {label}
@@ -533,15 +549,11 @@ function Phase3Page() {
         <div className="card">
           <h3>Progress <StatusPill status={job.status}/></h3>
           <LogBox logs={job.logs}/>
-          {job.result?.final_video && (
+          {videoSrc && (
             <div style={{marginTop:14}}>
-              <video className="video-player" controls src={job.result.use_subtitles
-          ? `/api/files/video/${job.result.run_id}/captioned`
-          : `/api/files/video/${job.result.run_id}`}/>
+              <video className="video-player" controls src={videoSrc}/>
               <div className="btn-row" style={{marginTop:10}}>
-                <a href={job.result.use_subtitles
-                  ? `/api/files/video/${job.result.run_id}/captioned`
-                  : `/api/files/video/${job.result.run_id}`} download>
+                <a href={videoSrc} download>
                   <button className="btn btn-secondary">⬇ Download Video</button>
                 </a>
               </div>
@@ -1166,11 +1178,12 @@ function PipelinePage({setPage}) {
                 ))}
             </div>
           )}
-          {p2Result?.run_id && (
-            <div style={{marginBottom:14}}>
-              <audio controls style={{width:'100%'}} src={`/api/files/audio/${p2Result.run_id}`}/>
-            </div>
-          )}
+          {p2Result?.project_run_id
+            ? <audio controls style={{width:'100%'}} src={`/api/files/project/${p2Result.project_run_id}/audio`}/>
+            : p2Result?.run_id
+              ? <audio controls style={{width:'100%'}} src={`/api/files/audio/${p2Result.run_id}`}/>
+            : null
+          }
           <div className="field">
             <label>Video Options</label>
             <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
@@ -1207,14 +1220,23 @@ function PipelinePage({setPage}) {
       {stage==='p3_done' && (
         <div className="card" style={{borderColor:'var(--success)'}}>
           <h3 style={{color:'var(--success)'}}>🎉 Pipeline complete! <StatusPill status="complete"/></h3>
-          {p3Result?.final_video && (
-            <div style={{margin:'12px 0'}}>
-              <video className="video-player" controls
-                src={p3Result.use_subtitles
-                  ? `/api/files/video/${p3Result.run_id}/captioned`
-                  : `/api/files/video/${p3Result.run_id}`}/>
-            </div>
-          )}
+          {p3Result && (() => {
+            const src = p3Result.project_run_id
+              ? `/api/files/project/${p3Result.project_run_id}/video?captioned=${!!p3Result.use_subtitles}`
+              : p3Result.use_subtitles
+                ? `/api/files/video/${p3Result.run_id}/captioned`
+                : `/api/files/video/${p3Result.run_id}`;
+            return (
+              <div style={{margin:'12px 0'}}>
+                <video className="video-player" controls src={src}/>
+                <div className="btn-row" style={{marginTop:10}}>
+                  <a href={src} download>
+                    <button className="btn btn-secondary">⬇ Download Video</button>
+                  </a>
+                </div>
+              </div>
+            );
+          })()}
           {p3Result && (
             <div className="result-box" style={{marginBottom:14}}>
               {Object.entries(p3Result)
@@ -1228,13 +1250,6 @@ function PipelinePage({setPage}) {
             </div>
           )}
           <div className="btn-row">
-            {p3Result?.run_id && (
-              <a href={p3Result.use_subtitles
-                ? `/api/files/video/${p3Result.run_id}/captioned`
-                : `/api/files/video/${p3Result.run_id}`} download>
-                <button className="btn btn-secondary">⬇ Download Video</button>
-              </a>
-            )}
             <button className="btn btn-primary" onClick={()=>setPage('phase5')}>
               ✏️ Open Edit Agent →
             </button>

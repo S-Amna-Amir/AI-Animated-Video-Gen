@@ -110,18 +110,25 @@ async def get_character_db():
 # Serves files from named project folders: data/runs/<slug>/
 
 @router.get("/project/{run_id}/video")
-async def get_project_video(run_id: str):
+async def get_project_video(run_id: str, captioned: bool = False):
     """Serve the final Phase 3 video for a named project."""
     from agents.pipeline_run_manager import PipelineRunManager
     pm = PipelineRunManager.load(run_id)
     if not pm:
         raise HTTPException(status_code=404, detail=f"Project '{run_id}' not found")
-    # VideoRunManager creates phase3/run_01/ inside the project phase3 dir
-    candidates = list(pm.phase3_dir.rglob("final_output.mp4")) if pm.phase3_dir.exists() else []
-    if candidates:
-        return FileResponse(str(candidates[0]), media_type="video/mp4", filename="final_output.mp4")
+    if pm.phase3_dir.exists():
+        # Order depends on whether captioned was requested
+        names = ("final_output_captioned.mp4", "final_output.mp4") if captioned \
+                else ("final_output.mp4", "final_output_captioned.mp4")
+        for name in names:
+            candidates = sorted(
+                pm.phase3_dir.rglob(name),
+                key=lambda p: p.stat().st_mtime,
+                reverse=True,
+            )
+            if candidates:
+                return FileResponse(str(candidates[0]), media_type="video/mp4", filename=candidates[0].name)
     raise HTTPException(status_code=404, detail="No video found. Run Phase 3 first.")
-
 
 @router.get("/project/{run_id}/audio")
 async def get_project_audio(run_id: str):
@@ -130,11 +137,23 @@ async def get_project_audio(run_id: str):
     pm = PipelineRunManager.load(run_id)
     if not pm:
         raise HTTPException(status_code=404, detail=f"Project '{run_id}' not found")
-    # AudioRunManager writes directly into phase2/ (no run_XX subdir in new layout)
-    audio = pm.phase2_dir / "master_audio_track.mp3"
-    _safe(audio)
-    return FileResponse(str(audio), media_type="audio/mpeg", filename="master_audio_track.mp3")
 
+    # First try direct path (old layout: phase2/master_audio_track.mp3)
+    direct = pm.phase2_dir / "master_audio_track.mp3"
+    if direct.exists():
+        return FileResponse(str(direct), media_type="audio/mpeg", filename="master_audio_track.mp3")
+
+    # New layout: phase2/run_XX/master_audio_track.mp3 — pick the latest run
+    if pm.phase2_dir.exists():
+        candidates = sorted(
+            pm.phase2_dir.rglob("master_audio_track.mp3"),
+            key=lambda p: p.stat().st_mtime,
+            reverse=True,
+        )
+        if candidates:
+            return FileResponse(str(candidates[0]), media_type="audio/mpeg", filename="master_audio_track.mp3")
+
+    raise HTTPException(status_code=404, detail="No audio found. Run Phase 2 first.")
 
 @router.get("/project/{run_id}/edit/{edit_index}/video")
 async def get_project_edit_video(run_id: str, edit_index: int):

@@ -356,11 +356,21 @@ async def _run_phase3(job_id: str, req: Phase3Request):
         pm = PipelineRunManager.latest()
         if pm:
             phase1_in  = str(pm.phase1_dir)
+            phase2_manifest = None
+            if pm.phase2_dir.exists():
+                candidates = sorted(
+                    pm.phase2_dir.rglob("timing_manifest.json"),
+                    key=lambda p: p.stat().st_mtime,
+                    reverse=True,
+                )
+                if candidates:
+                    phase2_manifest = str(candidates[0].parent)
             # Phase 2 writes directly into phase2/ — no run_XX subdir
-            phase2_run = req.phase2_run or str(pm.phase2_dir)
+            phase2_run = req.phase2_run or phase2_manifest or str(pm.phase2_dir)
             # Phase 3 also writes directly into phase3/ — no run_XX subdir
             video_mgr  = VideoRunManager(base_output_dir=str(pm.phase3_dir))
             jobs.log(job_id, f"Project: {pm.title!r}  →  {pm.phase3_dir}")
+            jobs.log(job_id, f"Phase 2 manifest found: {phase2_run}")
         else:
             phase1_in  = req.phase1_dir
             phase2_run = req.phase2_run or _latest_run("data/outputs/Phase2")
