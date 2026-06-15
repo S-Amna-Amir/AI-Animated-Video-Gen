@@ -9,7 +9,7 @@ from enum import Enum
 
 class EdgeTTSVoice(Enum):
     JACK_US    = "en-US-GuyNeural"
-    JAMES_US   = "en-US-DavidNeural"
+    JAMES_US   = "en-GB-RyanNeural"       # DavidNeural broken — replaced
     THOMAS_GB  = "en-GB-ThomasNeural"
     OLIVER_GB  = "en-GB-OliverNeural"
     RYAN_AU    = "en-AU-WilliamNeural"
@@ -20,8 +20,8 @@ class EdgeTTSVoice(Enum):
     EMILY_GB   = "en-GB-MiaNeural"
     SARAH_AU   = "en-AU-NatashaNeural"
     EMMA_CA    = "en-CA-ClaraNeural"
-    NARRATOR   = "en-US-ArthurNeural"
-    REPORTER   = "en-GB-RyanNeural"
+    NARRATOR   = "en-GB-RyanNeural"       # ArthurNeural broken — replaced
+    REPORTER   = "en-GB-ThomasNeural"
 
 
 class VoiceMapper:
@@ -40,25 +40,25 @@ class VoiceMapper:
         EdgeTTSVoice.RACHEL_US.value,
     ]
     DEFAULT_CHARACTER_VOICES: Dict[str, str] = {
-        "JACK": EdgeTTSVoice.JACK_US.value,
-        "JAMES": EdgeTTSVoice.JAMES_US.value,
-        "THOMAS": EdgeTTSVoice.THOMAS_GB.value,
-        "VLADIMIR": EdgeTTSVoice.OLIVER_GB.value,
-        "OLIVER": EdgeTTSVoice.OLIVER_GB.value,
-        "RYAN": EdgeTTSVoice.RYAN_AU.value,
-        "LIAM": EdgeTTSVoice.RYAN_CA.value,
-        "NARRATOR": EdgeTTSVoice.NARRATOR.value,
-        "HERO": EdgeTTSVoice.JACK_US.value,
-        "ALEX": EdgeTTSVoice.JAMES_US.value,
-        "MORGAN": EdgeTTSVoice.THOMAS_GB.value,
-        "RACHEL": EdgeTTSVoice.RACHEL_US.value,
-        "JESSICA": EdgeTTSVoice.JESSICA_US.value,
-        "SOPHIA": EdgeTTSVoice.SOPHIA_GB.value,
-        "EMILY": EdgeTTSVoice.EMILY_GB.value,
-        "SARAH": EdgeTTSVoice.SARAH_AU.value,
-        "EMMA": EdgeTTSVoice.EMMA_CA.value,
+        "JACK":      EdgeTTSVoice.JACK_US.value,
+        "JAMES":     EdgeTTSVoice.JAMES_US.value,
+        "THOMAS":    EdgeTTSVoice.THOMAS_GB.value,
+        "VLADIMIR":  EdgeTTSVoice.OLIVER_GB.value,
+        "OLIVER":    EdgeTTSVoice.OLIVER_GB.value,
+        "RYAN":      EdgeTTSVoice.RYAN_AU.value,
+        "LIAM":      EdgeTTSVoice.RYAN_CA.value,
+        "NARRATOR":  EdgeTTSVoice.NARRATOR.value,
+        "HERO":      EdgeTTSVoice.JACK_US.value,
+        "ALEX":      EdgeTTSVoice.JACK_US.value,       # was DavidNeural (broken)
+        "MORGAN":    EdgeTTSVoice.THOMAS_GB.value,
+        "RACHEL":    EdgeTTSVoice.RACHEL_US.value,
+        "JESSICA":   EdgeTTSVoice.JESSICA_US.value,
+        "SOPHIA":    EdgeTTSVoice.SOPHIA_GB.value,
+        "EMILY":     EdgeTTSVoice.EMILY_GB.value,
+        "SARAH":     EdgeTTSVoice.SARAH_AU.value,
+        "EMMA":      EdgeTTSVoice.EMMA_CA.value,
         "ALEXANDRA": EdgeTTSVoice.SOPHIA_GB.value,
-        "NATASHA": EdgeTTSVoice.EMILY_GB.value,
+        "NATASHA":   EdgeTTSVoice.EMILY_GB.value,
     }
 
     def __init__(

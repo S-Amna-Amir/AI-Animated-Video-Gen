@@ -41,8 +41,8 @@ class TestIntentClassifier:
 
     def test_make_scene_darker(self):
         r = self.clf.classify("Make the scene darker")
-        assert r["target"] == "video_frame"
-        assert "dark" in r["intent"]
+        assert r["target"] == "video_effect"   # FFmpeg color grade, not image regeneration
+        assert "dark" in r["intent"] or "brightness" in r["intent"]
 
     def test_add_background_music(self):
         r = self.clf.classify("Add background music")
@@ -69,7 +69,7 @@ class TestIntentClassifier:
 
     def test_remove_subtitle(self):
         r = self.clf.classify("Remove the subtitle")
-        assert r["target"] == "video"
+        assert r["target"] == "video_composition"   # FFmpeg recompose only
         assert "subtitle" in r["intent"]
 
     def test_change_character_design(self):
@@ -79,7 +79,7 @@ class TestIntentClassifier:
 
     def test_speed_up_scene(self):
         r = self.clf.classify("Speed up this scene")
-        assert r["target"] == "video"
+        assert r["target"] == "video_composition"   # FFmpeg recompose only
         assert "speed" in r["intent"]
 
     def test_regenerate_script(self):
@@ -89,11 +89,11 @@ class TestIntentClassifier:
 
     def test_make_scene_brighter(self):
         r = self.clf.classify("Make the scene brighter and more vivid")
-        assert r["target"] == "video_frame"
+        assert r["target"] == "video_effect"   # FFmpeg color grade, not image regeneration
 
     def test_add_subtitle(self):
         r = self.clf.classify("Add subtitle overlay")
-        assert r["target"] == "video"
+        assert r["target"] == "video_composition"   # FFmpeg recompose only
 
     def test_scene_scoping(self):
         r = self.clf.classify("Make scene 2 darker")
@@ -142,16 +142,17 @@ class TestEditPlanner:
         assert plan["steps"][0]["phase"] == 3
 
     def test_video_plan_uses_compose(self):
-        plan = self.planner.plan(self._intent("video", "remove_subtitle"))
+        # Both "video" (legacy) and "video_composition" (new) should route to rerun_video_compose
+        plan = self.planner.plan(self._intent("video_composition", "remove_subtitle"))
         assert plan["steps"][0]["action"] == "rerun_video_compose"
         assert plan["steps"][0]["params"]["use_subtitles"] is False
 
     def test_add_subtitle_sets_flag(self):
-        plan = self.planner.plan(self._intent("video", "add_subtitle"))
+        plan = self.planner.plan(self._intent("video_composition", "add_subtitle"))
         assert plan["steps"][0]["params"]["use_subtitles"] is True
 
     def test_all_plans_require_snapshot(self):
-        for target in ("script", "audio", "video_frame", "video"):
+        for target in ("script", "audio", "video_frame", "video_composition", "video_effect"):
             plan = self.planner.plan(self._intent(target, "test"))
             assert plan["requires_snapshot_before"] is True
 

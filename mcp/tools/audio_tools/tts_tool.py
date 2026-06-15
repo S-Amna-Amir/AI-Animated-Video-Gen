@@ -33,10 +33,12 @@ class TTSTool:
 
         # Try the assigned voice, then fallback voices if it fails
         fallback_voices = [
-            "en-US-GuyNeural",       # reliable male
-            "en-US-AriaNeural",      # reliable female
-            "en-GB-RyanNeural",      # GB male
-            "en-GB-SoniaNeural",     # GB female
+            "en-US-GuyNeural",       # reliable male US
+            "en-GB-RyanNeural",      # reliable male GB
+            "en-US-AriaNeural",      # reliable female US
+            "en-GB-SoniaNeural",     # reliable female GB
+            "en-AU-WilliamNeural",   # reliable male AU
+            "en-GB-MiaNeural",       # reliable female GB
         ]
         voices_to_try = [voice] + [v for v in fallback_voices if v != voice]
 

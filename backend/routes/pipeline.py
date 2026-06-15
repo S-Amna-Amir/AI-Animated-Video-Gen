@@ -369,9 +369,8 @@ async def _run_phase3(job_id: str, req: Phase3Request):
 
         jobs.log(job_id, f"Phase 2 source: {phase2_run}")
 
-        # Create the VideoAgent using our chosen run manager
-        run_id, run_dir_str = video_mgr.create_run_dir()
-        agent = VideoAgent(run_id=run_id, base_output_dir=str(Path(run_dir_str).parent))
+        # Create the VideoAgent — let it create its own run dir inside the project phase3 folder
+        agent = VideoAgent(base_output_dir=str(pm.phase3_dir) if pm else None)
 
         # Short mode: slice scenes/manifest to 1 scene / 3 lines
         if req.short_mode:

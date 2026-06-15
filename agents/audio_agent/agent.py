@@ -140,12 +140,17 @@ class EnhancedAudioAgent:
 
     def __init__(
         self,
-        phase1_data_dir: str = "data/outputs/Phase1",
+        phase1_data_dir: str = "data/outputs",
         phase2_output_dir: str = "data/outputs/Phase2",
         custom_voice_mappings: Optional[Dict[str, str]] = None,
         freesound_api_key: Optional[str] = None,
         run_id: Optional[str] = None,
         reverse_voice_preference: bool = True,
+        # Edit/BGM override parameters (used by Phase 5 executor)
+        custom_bgm_volume: Optional[float] = None,
+        custom_bgm_query: Optional[str] = None,
+        edit_intent: Optional[str] = None,
+        edit_scope: Optional[str] = None,
     ):
         self.phase1_data_dir = Path(phase1_data_dir)
         self.voice_mapper    = VoiceMapper(custom_voice_mappings, reverse_preference=reverse_voice_preference)
@@ -166,7 +171,36 @@ class EnhancedAudioAgent:
         self.run_manager.create_run_directory(run_id)
         self.tts_tool = TTSTool(str(self.run_manager.get_audio_output_dir()))
 
+        # ── Point pydub at the bundled ffmpeg so it doesn't warn ──────────────
+        try:
+            import imageio_ffmpeg as _iio
+            import pydub
+            pydub.AudioSegment.converter = _iio.get_ffmpeg_exe()
+        except Exception:
+            pass
+
+        # ── BGM volume and query (with edit override support) ─────────────────
         self.bgm_volume = 0.2
+        self.bgm_queries: Dict[str, str] = {}  # scene_id → query, or "global"
+
+        # Apply edit intent overrides
+        if edit_intent == "increase_bgm_volume":
+            factor = custom_bgm_volume if custom_bgm_volume is not None else 1.5
+            self.bgm_volume = min(1.0, self.bgm_volume * factor)
+        elif edit_intent == "decrease_bgm_volume":
+            factor = custom_bgm_volume if custom_bgm_volume is not None else 0.5
+            self.bgm_volume = max(0.0, self.bgm_volume * factor)
+        elif custom_bgm_volume is not None:
+            self.bgm_volume = max(0.0, min(1.0, custom_bgm_volume))
+
+        if custom_bgm_query:
+            scope = edit_scope or "all_scenes"
+            if scope.startswith("scene:"):
+                sid = scope.split(":")[1]
+                self.bgm_queries[str(sid)] = custom_bgm_query
+            else:
+                self.bgm_queries["global"] = custom_bgm_query
+
         self.scene_manifest: Dict = {}
         self.bgm_metadata: Dict[str, Any] = {}
         self.global_bgm_source: Optional[Path] = None
